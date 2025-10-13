@@ -33,7 +33,7 @@ For access to future implementations and tasks, please visit the [Kanban Board](
 ``` bash
 npm install -g @angular/cli 
 ```
-- Access to an OPENAI API KEY
+- Access to an OPENAI API KEY found at [OPENAI](https://platform.openai.com/settings/organization/api-keys)
 
 ### Clone the Repository
 ``` bash
