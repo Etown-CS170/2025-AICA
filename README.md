@@ -76,8 +76,10 @@ npm install
 ```
 Run the Angular development server:
 ``` bash
-npm start 
+npm run dev 
 ```
+
+#### The frontend server should now be running at http://localhost:4200.
 
 ### Running the Project
 * Make sure the backend server is running on http://localhost:5000.
