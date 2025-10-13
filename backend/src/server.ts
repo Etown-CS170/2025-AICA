@@ -35,16 +35,6 @@ app.get('/api/health', (req: Request, res: Response) => {
   });
 });
 
-// ✅ Root route (add this!)
-app.get('/api', (req: Request, res: Response) => {
-  res.send(`
-    ✅ Chat model initialized successfully<br>
-    🔗 API Base URL: http://localhost:${PORT}/api<br>
-    📬 Available endpoints:<br>
-    &nbsp;&nbsp;• /api/health<br>
-  `);
-});
-
 // 404 handler
 app.use((req: Request, res: Response) => {
   res.status(404).json({
