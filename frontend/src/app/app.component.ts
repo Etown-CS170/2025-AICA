@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -21,7 +21,10 @@ import {
   styleUrls: ['./app.component.css'],
   providers: [EmailService]
 })
-export class AppComponent implements OnInit {
+export class AppComponent implements OnInit, AfterViewChecked {
+  @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
+  
+  private shouldScrollToBottom = false;
   // Lucide icons
   readonly Mail = Mail;
   readonly Send = Send;
@@ -60,6 +63,26 @@ export class AppComponent implements OnInit {
     this.loadAudiences();
     this.loadTemplates();
     this.checkApiHealth();
+  }
+
+  ngAfterViewChecked(): void {
+    if (this.shouldScrollToBottom) {
+      this.scrollToBottom();
+      this.shouldScrollToBottom = false;
+    }
+  }
+
+  /**
+   * Scroll to bottom of messages container
+   */
+  private scrollToBottom(): void {
+    try {
+      if (this.messagesContainer) {
+        this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
+      }
+    } catch (err) {
+      console.error('Error scrolling to bottom:', err);
+    }
   }
 
   /**
@@ -200,6 +223,8 @@ export class AppComponent implements OnInit {
     };
 
     this.messages.push(userMessage);
+    this.shouldScrollToBottom = true;
+    
     const userPrompt = this.inputText;
     this.inputText = '';
     this.errorMessage = '';
@@ -225,6 +250,7 @@ export class AppComponent implements OnInit {
           };
           this.messages.push(aiMessage);
           this.lastGeneratedEmail = response.email;
+          this.shouldScrollToBottom = true;
         } else {
           this.errorMessage = response.error || 'Failed to generate email';
         }

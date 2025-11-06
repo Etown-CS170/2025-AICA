@@ -133,7 +133,7 @@
         <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-[600px]">
           
           <!-- Messages Area -->
-          <div class="flex-1 overflow-y-auto p-6 space-y-4">
+          <div #messagesContainer class="flex-1 overflow-y-auto p-6 space-y-4">
             
             <!-- Empty State -->
             <div *ngIf="messages.length === 0" class="text-center text-gray-400 mt-20">
