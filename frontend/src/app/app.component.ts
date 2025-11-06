@@ -38,6 +38,7 @@ export class AppComponent implements OnInit {
   inputText: string = '';
   selectedTone: string = 'professional';
   selectedAudience: string = 'professor';
+  selectedTemplate: string = '';
   customTone: string = '';
   customAudience: string = '';
   isCustomTone: boolean = false;
@@ -45,6 +46,7 @@ export class AppComponent implements OnInit {
   isGenerating: boolean = false;
   lastGeneratedEmail: string = '';
   errorMessage: string = '';
+  showCopySuccess: boolean = false;
 
   // Data
   tones: Tone[] = [];
@@ -240,6 +242,7 @@ export class AppComponent implements OnInit {
    */
   selectTemplate(template: Template): void {
     this.inputText = template.prompt;
+    this.selectedTemplate = template.id;
   }
 
   /**
@@ -247,7 +250,10 @@ export class AppComponent implements OnInit {
    */
   copyToClipboard(content: string): void {
     navigator.clipboard.writeText(content).then(() => {
-      console.log('Copied to clipboard');
+      this.showCopySuccess = true;
+      setTimeout(() => {
+        this.showCopySuccess = false;
+      }, 2000);
     });
   }
 
@@ -265,6 +271,7 @@ export class AppComponent implements OnInit {
     this.customAudience = '';
     this.selectedTone = 'professional';
     this.selectedAudience = 'professor';
+    this.selectedTemplate = '';
   }
 
   /**
