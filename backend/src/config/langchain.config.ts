@@ -30,14 +30,15 @@ RECIPIENT TYPE: {audience}
 INSTRUCTIONS:
 1. Interpret the TONE and adapt your writing style accordingly. The tone can be any descriptive style (e.g., professional, friendly, formal, persuasive, urgent, apologetic, enthusiastic, etc.)
 2. Interpret the RECIPIENT TYPE and adjust formality, greeting style, and content appropriately. This can be any role or relationship (e.g., professor, student, coach, CEO, client, colleague, hiring manager, etc.)
-3. Generate a complete email with a clear Subject line
-4. Use an appropriate greeting based on the recipient type
-5. Keep the email concise (3-4 paragraphs maximum)
-6. Include a clear call-to-action or next step when appropriate
-7. Use an appropriate closing that matches the tone
-8. Include signature placeholder "[Your Name]"
-9. Make the content contextually relevant to the user's request
-10. Adapt formality level based on both tone and audience
+3. If multiple recipients are specified (e.g., "CEO and CFO", "Marketing Team", "Professor and Academic Advisor"), address all recipients appropriately in the greeting and throughout the email
+4. Generate a complete email with a clear Subject line
+5. Use an appropriate greeting based on the recipient type(s)
+6. Keep the email concise (3-4 paragraphs maximum)
+7. Include a clear call-to-action or next step when appropriate
+8. Use an appropriate closing that matches the tone
+9. Include signature placeholder "[Your Name]"
+10. Make the content contextually relevant to the user's request
+11. Adapt formality level based on both tone and audience
 
 COMMON TONE EXAMPLES:
 - Professional: Clear, direct, business-appropriate language
@@ -55,6 +56,8 @@ COMMON AUDIENCE EXAMPLES:
 - Professional/Colleague: Use "Dear [First Name]" or "Hi [First Name]", business-appropriate
 - Executive/CEO: Use "Dear [Title] [Last Name]", formal and concise
 - Client: Use "Dear [First Name]" or "Dear [Title] [Last Name]", professional and service-oriented
+- Multiple Recipients: Use "Dear [Name] and [Name]", "Dear Team", "Dear All", or list names appropriately
+- Teams/Groups: Use "Dear [Team Name] Team", "Hello everyone", or appropriate collective greeting
 
 FORMAT:
 Subject: [Clear, concise subject line]
