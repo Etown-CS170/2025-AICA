@@ -46,16 +46,15 @@
             />
           </div>
           
-          <!-- Default Tone Buttons -->
-          <div class="grid grid-cols-2 gap-2">
+          <!-- Default Tone Buttons (hidden when custom mode is active) -->
+          <div *ngIf="!isCustomTone" class="grid grid-cols-2 gap-2">
             <button
               *ngFor="let tone of tones"
               (click)="selectTone(tone.id)"
-              [class]="!isCustomTone && selectedTone === tone.id 
+              [class]="selectedTone === tone.id 
                 ? tone.color + ' text-white shadow-md' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-              [disabled]="isCustomTone"
-              class="px-3 py-2 rounded-lg text-sm font-medium transition-all disabled:opacity-50">
+              class="px-3 py-2 rounded-lg text-sm font-medium transition-all">
               {{ tone.label }}
             </button>
           </div>
@@ -87,16 +86,15 @@
             />
           </div>
           
-          <!-- Default Audience Buttons -->
-          <div class="space-y-2">
+          <!-- Default Audience Buttons (hidden when custom mode is active) -->
+          <div *ngIf="!isCustomAudience" class="space-y-2">
             <button
               *ngFor="let audience of audiences"
               (click)="selectAudience(audience.id)"
-              [class]="!isCustomAudience && selectedAudience === audience.id 
+              [class]="selectedAudience === audience.id 
                 ? 'bg-purple-500 text-white shadow-md' 
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
-              [disabled]="isCustomAudience"
-              class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all disabled:opacity-50">
+              class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all">
               <lucide-icon [img]="getAudienceIcon(audience.id)" class="w-5 h-5"></lucide-icon>
               <span class="font-medium">{{ audience.label }}</span>
             </button>
