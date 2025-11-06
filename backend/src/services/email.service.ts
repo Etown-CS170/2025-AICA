@@ -2,8 +2,8 @@ import { initializeChatModel, emailPromptTemplate } from '../config/langchain.co
 
 export interface EmailGenerationRequest {
   prompt: string;
-  tone: 'professional' | 'friendly' | 'formal' | 'persuasive';
-  audience: 'professor' | 'student' | 'coach' | 'professional';
+  tone: string;  // Changed from union type to string
+  audience: string;  // Changed from union type to string
 }
 
 export interface EmailGenerationResponse {
@@ -40,11 +40,26 @@ class EmailService {
         };
       }
 
+      // Validate tone and audience are non-empty strings
+      if (!request.tone || typeof request.tone !== 'string' || request.tone.trim().length === 0) {
+        return {
+          success: false,
+          error: 'Tone must be a non-empty string'
+        };
+      }
+
+      if (!request.audience || typeof request.audience !== 'string' || request.audience.trim().length === 0) {
+        return {
+          success: false,
+          error: 'Audience must be a non-empty string'
+        };
+      }
+
       if (!this.chatModel) {
         throw new Error('Chat model not initialized. Please check your OpenAI API key.');
       }
 
-      // Format the prompt
+      // Format the prompt with any tone/audience values
       const formattedPrompt = await emailPromptTemplate.format({
         prompt: request.prompt,
         tone: request.tone,

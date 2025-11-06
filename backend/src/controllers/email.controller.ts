@@ -19,30 +19,37 @@ class EmailController {
         return;
       }
 
-      // Validate tone
-      const validTones = ['professional', 'friendly', 'formal', 'persuasive'];
-      if (!validTones.includes(tone)) {
+      // Validate that fields are strings
+      if (typeof prompt !== 'string' || typeof tone !== 'string' || typeof audience !== 'string') {
         res.status(400).json({
           success: false,
-          error: `Invalid tone. Must be one of: ${validTones.join(', ')}`
+          error: 'Invalid field types: prompt, tone, and audience must be strings'
         });
         return;
       }
 
-      // Validate audience
-      const validAudiences = ['professor', 'student', 'coach', 'professional'];
-      if (!validAudiences.includes(audience)) {
+      // Trim whitespace
+      const cleanedPrompt = prompt.trim();
+      const cleanedTone = tone.trim();
+      const cleanedAudience = audience.trim();
+
+      // Validate non-empty after trimming
+      if (!cleanedPrompt || !cleanedTone || !cleanedAudience) {
         res.status(400).json({
           success: false,
-          error: `Invalid audience. Must be one of: ${validAudiences.join(', ')}`
+          error: 'Fields cannot be empty or contain only whitespace'
         });
         return;
       }
 
-      console.log(`📨 Request received - Prompt: "${prompt.substring(0, 50)}...", Tone: ${tone}, Audience: ${audience}`);
+      console.log(`📨 Request received - Prompt: "${cleanedPrompt.substring(0, 50)}...", Tone: ${cleanedTone}, Audience: ${cleanedAudience}`);
 
-      // Generate email
-      const result = await emailService.generateEmail({ prompt, tone, audience });
+      // Generate email (now accepts any string values)
+      const result = await emailService.generateEmail({ 
+        prompt: cleanedPrompt, 
+        tone: cleanedTone, 
+        audience: cleanedAudience 
+      });
 
       if (result.success) {
         res.status(200).json(result);

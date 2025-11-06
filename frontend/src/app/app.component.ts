@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
-  User, Users, Briefcase, LucideAngularModule, LucideIconData
+  User, Users, Briefcase, LucideAngularModule, LucideIconData,
+  Edit3
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
 import { 
@@ -30,12 +31,17 @@ export class AppComponent implements OnInit {
   readonly User = User;
   readonly Users = Users;
   readonly Briefcase = Briefcase;
+  readonly Edit3 = Edit3;
 
   // Component state
   messages: Message[] = [];
   inputText: string = '';
-  selectedTone: ToneType = 'professional';
-  selectedAudience: AudienceType = 'professor';
+  selectedTone: string = 'professional';
+  selectedAudience: string = 'professor';
+  customTone: string = '';
+  customAudience: string = '';
+  isCustomTone: boolean = false;
+  isCustomAudience: boolean = false;
   isGenerating: boolean = false;
   lastGeneratedEmail: string = '';
   errorMessage: string = '';
@@ -115,6 +121,62 @@ export class AppComponent implements OnInit {
   }
 
   /**
+   * Toggle custom tone input
+   */
+  toggleCustomTone(): void {
+    this.isCustomTone = !this.isCustomTone;
+    if (this.isCustomTone) {
+      this.customTone = '';
+    }
+  }
+
+  /**
+   * Toggle custom audience input
+   */
+  toggleCustomAudience(): void {
+    this.isCustomAudience = !this.isCustomAudience;
+    if (this.isCustomAudience) {
+      this.customAudience = '';
+    }
+  }
+
+  /**
+   * Select a tone button
+   */
+  selectTone(toneId: string): void {
+    this.selectedTone = toneId;
+    this.isCustomTone = false;
+    this.customTone = '';
+  }
+
+  /**
+   * Select an audience button
+   */
+  selectAudience(audienceId: string): void {
+    this.selectedAudience = audienceId;
+    this.isCustomAudience = false;
+    this.customAudience = '';
+  }
+
+  /**
+   * Get the current tone value (custom or selected)
+   */
+  getCurrentTone(): string {
+    return this.isCustomTone && this.customTone.trim() 
+      ? this.customTone.trim() 
+      : this.selectedTone;
+  }
+
+  /**
+   * Get the current audience value (custom or selected)
+   */
+  getCurrentAudience(): string {
+    return this.isCustomAudience && this.customAudience.trim() 
+      ? this.customAudience.trim() 
+      : this.selectedAudience;
+  }
+
+  /**
    * Handle send button click
    */
   onSend(): void {
@@ -122,13 +184,16 @@ export class AppComponent implements OnInit {
       return;
     }
 
+    const tone = this.getCurrentTone();
+    const audience = this.getCurrentAudience();
+
     // Add user message
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
       content: this.inputText,
-      tone: this.selectedTone,
-      audience: this.selectedAudience,
+      tone: tone,
+      audience: audience,
       timestamp: new Date()
     };
 
@@ -141,8 +206,8 @@ export class AppComponent implements OnInit {
     // Call API to generate email
     const request: EmailRequest = {
       prompt: userPrompt,
-      tone: this.selectedTone,
-      audience: this.selectedAudience
+      tone: tone,
+      audience: audience
     };
 
     this.emailService.generateEmail(request).subscribe({
@@ -182,7 +247,6 @@ export class AppComponent implements OnInit {
    */
   copyToClipboard(content: string): void {
     navigator.clipboard.writeText(content).then(() => {
-      // Could add a toast notification here
       console.log('Copied to clipboard');
     });
   }
@@ -195,6 +259,12 @@ export class AppComponent implements OnInit {
     this.lastGeneratedEmail = '';
     this.inputText = '';
     this.errorMessage = '';
+    this.isCustomTone = false;
+    this.isCustomAudience = false;
+    this.customTone = '';
+    this.customAudience = '';
+    this.selectedTone = 'professional';
+    this.selectedAudience = 'professor';
   }
 
   /**

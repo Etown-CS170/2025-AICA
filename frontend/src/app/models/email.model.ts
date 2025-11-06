@@ -1,7 +1,7 @@
 export interface EmailRequest {
   prompt: string;
-  tone: ToneType;
-  audience: AudienceType;
+  tone: string; // Changed from ToneType to allow custom values
+  audience: string; // Changed from AudienceType to allow custom values
 }
 
 export interface EmailResponse {
@@ -42,7 +42,7 @@ export interface Message {
   id: number;
   type: 'user' | 'ai';
   content: string;
-  tone?: ToneType;
-  audience?: AudienceType;
+  tone?: string;
+  audience?: string;
   timestamp: Date;
 }
