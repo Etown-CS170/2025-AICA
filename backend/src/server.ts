@@ -44,13 +44,19 @@ app.use((req: Request, res: Response) => {
 
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('Error:', err.message);
+  console.error('=================================');
+  console.error('❌ GLOBAL ERROR HANDLER TRIGGERED');
+  console.error('Error Name:', err.name);
+  console.error('Error Message:', err.message);
+  console.error('Error Stack:', err.stack);
+  console.error('=================================');
   
   // Handle Auth0 errors
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({
       success: false,
-      message: 'Invalid or missing token'
+      message: 'Invalid or missing token',
+      error: err.message
     });
   }
   
@@ -67,4 +73,6 @@ app.listen(PORT, () => {
   console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
   console.log(`🔐 Auth0 Domain: ${process.env.AUTH0_DOMAIN}`);
+  console.log(`🔐 Auth0 Audience: ${process.env.AUTH0_AUDIENCE}`);
+  console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Missing'}`);
 });

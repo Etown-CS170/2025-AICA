@@ -14,8 +14,15 @@ bootstrapApplication(AppComponent, {
       ...environment.auth0,
       httpInterceptor: {
         allowedList: [
-          `${environment.apiUrl}/email/generate`,
-          // Add other protected endpoints here
+          'http://localhost:3000/api/*',  // Match ALL api endpoints
+          {
+            uri: 'http://localhost:3000/api/*',
+            tokenOptions: {
+              authorizationParams: {
+                audience: 'https://dev-c8488bb6p3agyt65.us.auth0.com/api/v2/'
+              }
+            }
+          }
         ]
       }
     })

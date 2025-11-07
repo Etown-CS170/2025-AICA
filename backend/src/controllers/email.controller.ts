@@ -10,9 +10,9 @@ class EmailController {
     try {
       const { prompt, tone, audience }: EmailGenerationRequest = req.body;
 
-      // Access authenticated user (added for Auth0)
-      const userId = req.auth?.payload.sub;
-      const userEmail = req.auth?.payload.email;
+      // Access authenticated user (added for Auth0) - optional for now
+      const userId = (req as any).auth?.payload?.sub || 'anonymous';
+      const userEmail = (req as any).auth?.payload?.email || 'no-email';
       console.log(`📨 User ${userId} (${userEmail}) generating email`);
 
       // Validate required fields
@@ -59,14 +59,19 @@ class EmailController {
       if (result.success) {
         res.status(200).json(result);
       } else {
+        console.error('❌ Email generation failed:', result.error);
         res.status(500).json(result);
       }
 
     } catch (error: any) {
-      console.error('Error in generateEmail controller:', error);
+      console.error('❌ ERROR IN CONTROLLER:', error);
+      console.error('❌ ERROR STACK:', error.stack);
+      console.error('❌ ERROR MESSAGE:', error.message);
+      console.error('❌ ERROR NAME:', error.name);
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Internal server error',
+        details: error.message
       });
     }
   }
