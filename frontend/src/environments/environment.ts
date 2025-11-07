@@ -2,11 +2,11 @@ export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000/api',
   auth0: {
-    domain: 'your-tenant.us.auth0.com',
-    clientId: 'YOUR_AUTH0_CLIENT_ID',
+    domain: 'dev-c8488bb6p3agyt65.us.auth0.com',
+    clientId: 'mGp3vnXF3Qijavt7Yem4gofbnnjek99I',
     authorizationParams: {
       redirect_uri: window.location.origin,
-      audience: 'https://your-tenant.us.auth0.com/api/v2/'
+      audience: 'https://dev-c8488bb6p3agyt65.us.auth0.com/api/v2/'
     }
   }
 };
