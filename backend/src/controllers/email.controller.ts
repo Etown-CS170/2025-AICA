@@ -10,6 +10,11 @@ class EmailController {
     try {
       const { prompt, tone, audience }: EmailGenerationRequest = req.body;
 
+      // Access authenticated user (added for Auth0)
+      const userId = req.auth?.payload.sub;
+      const userEmail = req.auth?.payload.email;
+      console.log(`📨 User ${userId} (${userEmail}) generating email`);
+
       // Validate required fields
       if (!prompt || !tone || !audience) {
         res.status(400).json({

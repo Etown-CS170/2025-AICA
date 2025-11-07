@@ -1,5 +1,4 @@
 import dotenv from 'dotenv';
-// Load environment variables FIRST before any other imports
 dotenv.config();
 
 import express, { Application, Request, Response, NextFunction } from 'express';
@@ -26,7 +25,7 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 // Routes
 app.use('/api/email', emailRoutes);
 
-// Health check
+// Health check (public)
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
@@ -46,6 +45,15 @@ app.use((req: Request, res: Response) => {
 // Error handler
 app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
   console.error('Error:', err.message);
+  
+  // Handle Auth0 errors
+  if (err.name === 'UnauthorizedError') {
+    return res.status(401).json({
+      success: false,
+      message: 'Invalid or missing token'
+    });
+  }
+  
   res.status(500).json({
     success: false,
     message: 'Internal server error',
@@ -58,4 +66,5 @@ app.listen(PORT, () => {
   console.log(`🚀 AICA Backend Server running on port ${PORT}`);
   console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
+  console.log(`🔐 Auth0 Domain: ${process.env.AUTH0_DOMAIN}`);
 });
