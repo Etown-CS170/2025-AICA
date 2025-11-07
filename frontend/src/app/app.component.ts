@@ -5,13 +5,14 @@ import { HttpClientModule } from '@angular/common/http';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
-  Edit3
+  Edit3, LogIn, LogOut
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
 import { 
   Message, Tone, Audience, Template, 
   ToneType, AudienceType, EmailRequest 
 } from './models/email.model';
+import { AuthService } from '@auth0/auth0-angular';
 
 @Component({
   selector: 'app-root',
@@ -25,6 +26,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   
   private shouldScrollToBottom = false;
+  
   // Lucide icons
   readonly Mail = Mail;
   readonly Send = Send;
@@ -35,6 +37,16 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly Users = Users;
   readonly Briefcase = Briefcase;
   readonly Edit3 = Edit3;
+  readonly LogIn = LogIn;
+  readonly LogOut = LogOut;
+  
+  // Auth observables
+  get isAuthenticated$() {
+    return this.auth.isAuthenticated$;
+  }
+  get user$() {
+    return this.auth.user$;
+  }
 
   // Component state
   messages: Message[] = [];
@@ -56,7 +68,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
   audiences: Audience[] = [];
   templates: Template[] = [];
 
-  constructor(private emailService: EmailService) {}
+  constructor(
+    private emailService: EmailService,
+    public auth: AuthService
+  ) {}
 
   ngOnInit(): void {
     this.loadTones();
@@ -298,6 +313,21 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.selectedTone = 'professional';
     this.selectedAudience = 'professor';
     this.selectedTemplate = '';
+  }
+
+  /**
+   * Auth methods
+   */
+  login(): void {
+    this.auth.loginWithRedirect();
+  }
+
+  logout(): void {
+    this.auth.logout({
+      logoutParams: {
+        returnTo: window.location.origin
+      }
+    });
   }
 
   /**

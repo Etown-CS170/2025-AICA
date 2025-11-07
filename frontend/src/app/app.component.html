@@ -3,11 +3,60 @@
     
     <!-- Header -->
     <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
-      <div class="flex items-center gap-3 mb-2">
-        <img src="aica_complex-nobg.png" alt="AICA Logo" class="w-12 h-12">
-        <h1 class="text-3xl font-bold text-gray-800">AICA</h1>
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <img src="aica_complex-nobg.png" alt="AICA Logo" class="w-12 h-12">
+          <div>
+            <h1 class="text-3xl font-bold text-gray-800">AICA</h1>
+            <p class="text-gray-600 text-sm">AI Communication Assistant</p>
+          </div>
+        </div>
+        
+        <!-- Auth Section -->
+        <div class="flex items-center gap-4">
+          <!-- Loading State -->
+          <div *ngIf="(isAuthenticated$ | async) === null" class="text-gray-500">
+            Loading...
+          </div>
+          
+          <!-- Logged Out State -->
+          <button 
+            *ngIf="(isAuthenticated$ | async) === false"
+            (click)="login()"
+            class="flex items-center gap-2 px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <lucide-icon [img]="LogIn" class="w-5 h-5"></lucide-icon>
+            Sign In
+          </button>
+          
+          <!-- Logged In State -->
+          <div *ngIf="(isAuthenticated$ | async) === true" class="flex items-center gap-4">
+            <div class="flex items-center gap-3">
+              <img 
+                *ngIf="(user$ | async)?.picture" 
+                [src]="(user$ | async)?.picture" 
+                [alt]="(user$ | async)?.name"
+                class="w-10 h-10 rounded-full border-2 border-blue-500">
+              <div class="text-right">
+                <p class="text-sm font-semibold text-gray-800">{{ (user$ | async)?.name }}</p>
+                <p class="text-xs text-gray-500">{{ (user$ | async)?.email }}</p>
+              </div>
+            </div>
+            <button 
+              (click)="logout()"
+              class="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+              <lucide-icon [img]="LogOut" class="w-5 h-5"></lucide-icon>
+              Sign Out
+            </button>
+          </div>
+        </div>
       </div>
-      <p class="text-gray-600">AI Communication Assistant - Craft professional emails with context and tone</p>
+    </div>
+
+    <!-- Auth Required Message -->
+    <div *ngIf="(isAuthenticated$ | async) === false" 
+        class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+      <p class="font-medium">🔐 Please sign in to generate emails</p>
+      <p class="text-sm mt-1">Sign in with Google, Microsoft, GitHub, Apple, or email/password</p>
     </div>
 
     <!-- Error Message -->
@@ -194,7 +243,7 @@
               
               <button
                 (click)="onSend()"
-                [disabled]="!inputText.trim() || isGenerating"
+                [disabled]="!inputText.trim() || isGenerating || !(isAuthenticated$ | async)"
                 class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
                 <lucide-icon [img]="Send" class="w-5 h-5"></lucide-icon>
               </button>

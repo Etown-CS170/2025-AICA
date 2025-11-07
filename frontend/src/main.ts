@@ -1,9 +1,23 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { provideAuth0 } from '@auth0/auth0-angular';
+import { authHttpInterceptorFn } from '@auth0/auth0-angular';
 import { AppComponent } from './app/app.component';
+import { environment } from './environments/environment';
 
 bootstrapApplication(AppComponent, {
   providers: [
-    provideHttpClient()
+    provideHttpClient(
+      withInterceptors([authHttpInterceptorFn])
+    ),
+    provideAuth0({
+      ...environment.auth0,
+      httpInterceptor: {
+        allowedList: [
+          `${environment.apiUrl}/email/generate`,
+          // Add other protected endpoints here
+        ]
+      }
+    })
   ]
 }).catch(err => console.error(err));
