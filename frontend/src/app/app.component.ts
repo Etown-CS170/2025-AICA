@@ -10,10 +10,11 @@ import {
 import { EmailService } from './services/email.service';
 import { 
   Message, Tone, Audience, Template, 
-  EmailRequest 
+  EmailRequest, EmailResponse
 } from './models/email.model';
 import { AuthService } from '@auth0/auth0-angular';
 import { environment } from '../environments/environment';
+import { distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -81,8 +82,9 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.loadTemplates();
     this.checkApiHealth();
 
-    this.auth.isAuthenticated$.subscribe(isAuth => {
-      if (isAuth) {
+    // Fetch token only when authenticated state changes and accessToken is null
+    this.auth.isAuthenticated$.pipe(distinctUntilChanged()).subscribe(isAuth => {
+      if (isAuth && !this.accessToken) {
         this.auth.getAccessTokenSilently({
           authorizationParams: {
             audience: 'https://aica-backend-api'
@@ -226,7 +228,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.isGenerating = true;
 
     try {
-      const response: any = await this.emailService.generateEmail(request, this.accessToken ?? undefined);
+      const response: EmailResponse = await this.emailService.generateEmail(request, this.accessToken ?? undefined);
       this.isGenerating = false;
 
       if (response.success && response.email) {

@@ -1,4 +1,3 @@
-// backend/src/server.ts
 import dotenv from 'dotenv';
 dotenv.config();
 
@@ -43,21 +42,25 @@ app.use((req: Request, res: Response) => {
   });
 });
 
-// Global error handler (generic)
-app.use((err: any, req: Request, res: Response, next: NextFunction) => {
-  // console.error('❌ An unexpected error occurred');
+// Custom Express error type
+interface ExpressError extends Error {
+  status?: number;
+}
+
+// Global error handler
+app.use((err: ExpressError, req: Request, res: Response, next: NextFunction) => {
+  // console.error('❌ An unexpected error occurred', err);
 
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({
       success: false,
-      message: 'Unauthorized request'
+      message: 'Authentication token is invalid or missing'
     });
   }
 
   res.status(err.status || 500).json({
     success: false,
     message: 'Internal server error',
-    timestamp: new Date().toISOString()
   });
 });
 

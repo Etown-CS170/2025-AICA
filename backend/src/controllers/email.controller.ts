@@ -13,19 +13,18 @@ class EmailController {
       const { prompt, tone, audience }: EmailGenerationRequest = req.body;
 
       const userId = (req as any).auth?.payload?.sub;
-      const userEmail = (req as any).auth?.payload?.email;
 
       if (!userId) {
         res.status(401).json({
           success: false,
-          error: 'Unauthorized request'
+          error: 'Authentication required: missing user credentials'
         });
         return;
       }
 
-      // console.log(`📨 User ${userId} (${userEmail}) generating email`);
-
-      if (!prompt || !tone || !audience) {
+      // Validate presence and type
+      if (!prompt || !tone || !audience ||
+          typeof prompt !== 'string' || typeof tone !== 'string' || typeof audience !== 'string') {
         res.status(400).json({
           success: false,
           error: 'Invalid request'
@@ -33,14 +32,7 @@ class EmailController {
         return;
       }
 
-      if (typeof prompt !== 'string' || typeof tone !== 'string' || typeof audience !== 'string') {
-        res.status(400).json({
-          success: false,
-          error: 'Invalid request'
-        });
-        return;
-      }
-
+      // Trim whitespace and validate non-empty
       const cleanedPrompt = prompt.trim();
       const cleanedTone = tone.trim();
       const cleanedAudience = audience.trim();
@@ -53,8 +45,6 @@ class EmailController {
         return;
       }
 
-      // console.log(`📨 Request received - Prompt: "${cleanedPrompt.substring(0, 50)}...", Tone: ${cleanedTone}, Audience: ${cleanedAudience}`);
-
       const result = await emailService.generateEmail({ 
         prompt: cleanedPrompt, 
         tone: cleanedTone, 
@@ -64,21 +54,20 @@ class EmailController {
       if (result.success) {
         res.status(200).json(result);
       } else {
-        // console.error('❌ Email generation failed');
         res.status(500).json({
           success: false,
-          error: 'An error occurred while generating the email'
+          error: 'Invalid request'
         });
       }
 
     } catch (error: any) {
-      // console.error('❌ ERROR IN CONTROLLER');
       res.status(500).json({
         success: false,
-        error: 'Internal server error'
+        error: 'Invalid request'
       });
     }
   }
+
 
   /**
    * Get available tones
