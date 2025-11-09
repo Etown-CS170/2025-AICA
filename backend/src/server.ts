@@ -16,9 +16,9 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logging middleware
+// Logging middleware (optional — comment out for production)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  // console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
@@ -38,41 +38,34 @@ app.get('/api/health', (req: Request, res: Response) => {
 app.use((req: Request, res: Response) => {
   res.status(404).json({
     success: false,
-    message: 'Route not found'
+    message: 'Not found'
   });
 });
 
-// Error handler
-app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
-  console.error('=================================');
-  console.error('❌ GLOBAL ERROR HANDLER TRIGGERED');
-  console.error('Error Name:', err.name);
-  console.error('Error Message:', err.message);
-  console.error('Error Stack:', err.stack);
-  console.error('=================================');
-  
-  // Handle Auth0 errors
+// Custom Express error type
+interface ExpressError extends Error {
+  status?: number;
+}
+
+// Global error handler
+app.use((err: ExpressError, req: Request, res: Response, next: NextFunction) => {
+  // console.error('❌ An unexpected error occurred', err);
+
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({
       success: false,
-      message: 'Invalid or missing token',
-      error: err.message
+      message: 'Authentication token is invalid or missing'
     });
   }
-  
-  res.status(500).json({
+
+  res.status(err.status || 500).json({
     success: false,
     message: 'Internal server error',
-    error: process.env.NODE_ENV === 'development' ? err.message : undefined
   });
 });
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 AICA Backend Server running on port ${PORT}`);
-  console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
-  console.log(`🔗 API Base URL: http://localhost:${PORT}/api`);
-  console.log(`🔐 Auth0 Domain: ${process.env.AUTH0_DOMAIN}`);
-  console.log(`🔐 Auth0 Audience: ${process.env.AUTH0_AUDIENCE}`);
-  console.log(`🔑 OpenAI API Key: ${process.env.OPENAI_API_KEY ? '✅ Set' : '❌ Missing'}`);
+  // console.log(`🚀 AICA Backend Server running on port ${PORT}`);
+  // console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
 });

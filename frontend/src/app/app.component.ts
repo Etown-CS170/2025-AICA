@@ -10,9 +10,11 @@ import {
 import { EmailService } from './services/email.service';
 import { 
   Message, Tone, Audience, Template, 
-  ToneType, AudienceType, EmailRequest 
+  EmailRequest, EmailResponse
 } from './models/email.model';
 import { AuthService } from '@auth0/auth0-angular';
+import { environment } from '../environments/environment';
+import { distinctUntilChanged } from 'rxjs/operators';
 
 @Component({
   selector: 'app-root',
@@ -24,9 +26,8 @@ import { AuthService } from '@auth0/auth0-angular';
 })
 export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
-  
   private shouldScrollToBottom = false;
-  
+
   // Lucide icons
   readonly Mail = Mail;
   readonly Send = Send;
@@ -39,7 +40,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly Edit3 = Edit3;
   readonly LogIn = LogIn;
   readonly LogOut = LogOut;
-  
+
   // Auth observables
   get isAuthenticated$() {
     return this.auth.isAuthenticated$;
@@ -68,6 +69,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
   audiences: Audience[] = [];
   templates: Template[] = [];
 
+  private accessToken: string | null = null;
+
   constructor(
     private emailService: EmailService,
     public auth: AuthService
@@ -78,6 +81,41 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.loadAudiences();
     this.loadTemplates();
     this.checkApiHealth();
+
+    // Fetch token only when authenticated state changes and accessToken is null
+    this.auth.isAuthenticated$.pipe(distinctUntilChanged()).subscribe(isAuth => {
+      if (isAuth && !this.accessToken) {
+        this.auth.getAccessTokenSilently({
+          authorizationParams: {
+            audience: 'https://aica-backend-api'
+          }
+        }).subscribe({
+          next: (token) => {
+            this.accessToken = token;
+          },
+          error: () => {
+            // Suppress specific token retrieval errors
+          }
+        });
+      }
+    });
+  }
+
+  login(): void {
+    this.auth.loginWithRedirect({
+      authorizationParams: {
+        audience: environment.auth0.authorizationParams.audience,
+        scope: 'openid profile email',
+      },
+    });
+  }
+
+  logout(): void {
+    this.auth.logout({
+      logoutParams: {
+        returnTo: window.location.origin
+      }
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -87,220 +125,143 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  /**
-   * Scroll to bottom of messages container
-   */
   private scrollToBottom(): void {
     try {
       if (this.messagesContainer) {
         this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
       }
-    } catch (err) {
-      console.error('Error scrolling to bottom:', err);
+    } catch (error) {
+      console.error('Scroll error:', error);
     }
   }
 
-  /**
-   * Load available tones from API
-   */
   loadTones(): void {
     this.emailService.getTones().subscribe({
-      next: (tones) => {
-        this.tones = tones;
-      },
-      error: (error) => {
-        console.error('Error loading tones:', error);
-        this.tones = this.getDefaultTones();
-      }
+      next: (tones) => this.tones = tones,
+      error: () => this.tones = this.getDefaultTones()
     });
   }
 
-  /**
-   * Load available audiences from API
-   */
   loadAudiences(): void {
     this.emailService.getAudiences().subscribe({
-      next: (audiences) => {
-        this.audiences = audiences;
-      },
-      error: (error) => {
-        console.error('Error loading audiences:', error);
-        this.audiences = this.getDefaultAudiences();
-      }
+      next: (audiences) => this.audiences = audiences,
+      error: () => this.audiences = this.getDefaultAudiences()
     });
   }
 
-  /**
-   * Load email templates from API
-   */
   loadTemplates(): void {
     this.emailService.getTemplates().subscribe({
-      next: (templates) => {
-        this.templates = templates;
-      },
-      error: (error) => {
-        console.error('Error loading templates:', error);
-        this.templates = this.getDefaultTemplates();
-      }
+      next: (templates) => this.templates = templates,
+      error: () => this.templates = this.getDefaultTemplates()
     });
   }
 
-  /**
-   * Check API health status
-   */
   checkApiHealth(): void {
     this.emailService.checkHealth().subscribe({
-      next: (response) => {
-        console.log('API Health Check:', response);
-      },
-      error: (error) => {
-        console.error('API Health Check Failed:', error);
-        this.errorMessage = 'Backend API is not responding. Please ensure the server is running.';
+      next: () => {},
+      error: () => {
+        this.errorMessage = 'Unable to reach the backend service.';
       }
     });
   }
 
-  /**
-   * Toggle custom tone input
-   */
   toggleCustomTone(): void {
     this.isCustomTone = !this.isCustomTone;
-    if (this.isCustomTone) {
-      this.customTone = '';
-    }
+    if (this.isCustomTone) this.customTone = '';
   }
 
-  /**
-   * Toggle custom audience input
-   */
   toggleCustomAudience(): void {
     this.isCustomAudience = !this.isCustomAudience;
-    if (this.isCustomAudience) {
-      this.customAudience = '';
-    }
+    if (this.isCustomAudience) this.customAudience = '';
   }
 
-  /**
-   * Select a tone button
-   */
   selectTone(toneId: string): void {
     this.selectedTone = toneId;
     this.isCustomTone = false;
     this.customTone = '';
   }
 
-  /**
-   * Select an audience button
-   */
   selectAudience(audienceId: string): void {
     this.selectedAudience = audienceId;
     this.isCustomAudience = false;
     this.customAudience = '';
   }
 
-  /**
-   * Get the current tone value (custom or selected)
-   */
   getCurrentTone(): string {
-    return this.isCustomTone && this.customTone.trim() 
-      ? this.customTone.trim() 
+    return this.isCustomTone && this.customTone.trim()
+      ? this.customTone.trim()
       : this.selectedTone;
   }
 
-  /**
-   * Get the current audience value (custom or selected)
-   */
   getCurrentAudience(): string {
-    return this.isCustomAudience && this.customAudience.trim() 
-      ? this.customAudience.trim() 
+    return this.isCustomAudience && this.customAudience.trim()
+      ? this.customAudience.trim()
       : this.selectedAudience;
   }
 
-  /**
-   * Handle send button click
-   */
-  onSend(): void {
-    if (!this.inputText.trim() || this.isGenerating) {
-      return;
-    }
+  async onSend(): Promise<void> {
+    if (!this.inputText.trim() || this.isGenerating) return;
 
     const tone = this.getCurrentTone();
     const audience = this.getCurrentAudience();
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
       content: this.inputText,
-      tone: tone,
-      audience: audience,
+      tone,
+      audience,
       timestamp: new Date()
     };
 
     this.messages.push(userMessage);
     this.shouldScrollToBottom = true;
-    
-    const userPrompt = this.inputText;
+
+    const request: EmailRequest = {
+      prompt: this.inputText,
+      tone,
+      audience
+    };
+
     this.inputText = '';
     this.errorMessage = '';
     this.isGenerating = true;
 
-    // Call API to generate email
-    const request: EmailRequest = {
-      prompt: userPrompt,
-      tone: tone,
-      audience: audience
-    };
+    try {
+      const response: EmailResponse = await this.emailService.generateEmail(request, this.accessToken ?? undefined);
+      this.isGenerating = false;
 
-    this.emailService.generateEmail(request).subscribe({
-      next: (response) => {
-        this.isGenerating = false;
-        
-        if (response.success && response.email) {
-          const aiMessage: Message = {
-            id: Date.now() + 1,
-            type: 'ai',
-            content: response.email,
-            timestamp: new Date()
-          };
-          this.messages.push(aiMessage);
-          this.lastGeneratedEmail = response.email;
-          this.shouldScrollToBottom = true;
-        } else {
-          this.errorMessage = response.error || 'Failed to generate email';
-        }
-      },
-      error: (error) => {
-        this.isGenerating = false;
-        this.errorMessage = error.message || 'An error occurred while generating the email';
-        console.error('Generation error:', error);
+      if (response.success && response.email) {
+        const aiMessage: Message = {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: response.email,
+          timestamp: new Date()
+        };
+        this.messages.push(aiMessage);
+        this.lastGeneratedEmail = response.email;
+        this.shouldScrollToBottom = true;
+      } else {
+        this.errorMessage = 'Unable to generate an email at this time.';
       }
-    });
+    } catch {
+      this.isGenerating = false;
+      this.errorMessage = 'A problem occurred while generating your email.';
+    }
   }
 
-  /**
-   * Select a template
-   */
   selectTemplate(template: Template): void {
     this.inputText = template.prompt;
     this.selectedTemplate = template.id;
   }
 
-  /**
-   * Copy email to clipboard
-   */
   copyToClipboard(content: string): void {
     navigator.clipboard.writeText(content).then(() => {
       this.showCopySuccess = true;
-      setTimeout(() => {
-        this.showCopySuccess = false;
-      }, 2000);
+      setTimeout(() => this.showCopySuccess = false, 2000);
     });
   }
 
-  /**
-   * Reset conversation
-   */
   reset(): void {
     this.messages = [];
     this.lastGeneratedEmail = '';
@@ -315,24 +276,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.selectedTemplate = '';
   }
 
-  /**
-   * Auth methods
-   */
-  login(): void {
-    this.auth.loginWithRedirect();
-  }
-
-  logout(): void {
-    this.auth.logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    });
-  }
-
-  /**
-   * Get icon for audience type
-   */
   getAudienceIcon(audienceId: string): LucideIconData {
     const iconMap: Record<string, LucideIconData> = {
       'professor': this.GraduationCap,
@@ -343,9 +286,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     return iconMap[audienceId] || this.User;
   }
 
-  /**
-   * Handle Enter key in input
-   */
   onKeyPress(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -353,9 +293,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  /**
-   * Default fallback data
-   */
   private getDefaultTones(): Tone[] {
     return [
       { id: 'professional', label: 'Professional', color: 'bg-blue-500' },

@@ -1,3 +1,4 @@
+// backend/src/controllers/email.controller.ts
 import { Request, Response } from 'express';
 import emailService, { EmailGenerationRequest } from '../services/email.service';
 
@@ -5,51 +6,45 @@ class EmailController {
   /**
    * Generate email based on user input
    * POST /api/email/generate
+   * PROTECTED - Requires authentication
    */
   async generateEmail(req: Request, res: Response): Promise<void> {
     try {
       const { prompt, tone, audience }: EmailGenerationRequest = req.body;
 
-      // Access authenticated user (added for Auth0) - optional for now
-      const userId = (req as any).auth?.payload?.sub || 'anonymous';
-      const userEmail = (req as any).auth?.payload?.email || 'no-email';
-      console.log(`📨 User ${userId} (${userEmail}) generating email`);
+      const userId = (req as any).auth?.payload?.sub;
 
-      // Validate required fields
-      if (!prompt || !tone || !audience) {
-        res.status(400).json({
+      if (!userId) {
+        res.status(401).json({
           success: false,
-          error: 'Missing required fields: prompt, tone, and audience are required'
+          error: 'Authentication required: missing user credentials'
         });
         return;
       }
 
-      // Validate that fields are strings
-      if (typeof prompt !== 'string' || typeof tone !== 'string' || typeof audience !== 'string') {
+      // Validate presence and type
+      if (!prompt || !tone || !audience ||
+          typeof prompt !== 'string' || typeof tone !== 'string' || typeof audience !== 'string') {
         res.status(400).json({
           success: false,
-          error: 'Invalid field types: prompt, tone, and audience must be strings'
+          error: 'Invalid request'
         });
         return;
       }
 
-      // Trim whitespace
+      // Trim whitespace and validate non-empty
       const cleanedPrompt = prompt.trim();
       const cleanedTone = tone.trim();
       const cleanedAudience = audience.trim();
 
-      // Validate non-empty after trimming
       if (!cleanedPrompt || !cleanedTone || !cleanedAudience) {
         res.status(400).json({
           success: false,
-          error: 'Fields cannot be empty or contain only whitespace'
+          error: 'Invalid request'
         });
         return;
       }
 
-      console.log(`📨 Request received - Prompt: "${cleanedPrompt.substring(0, 50)}...", Tone: ${cleanedTone}, Audience: ${cleanedAudience}`);
-
-      // Generate email (now accepts any string values)
       const result = await emailService.generateEmail({ 
         prompt: cleanedPrompt, 
         tone: cleanedTone, 
@@ -59,26 +54,25 @@ class EmailController {
       if (result.success) {
         res.status(200).json(result);
       } else {
-        console.error('❌ Email generation failed:', result.error);
-        res.status(500).json(result);
+        res.status(500).json({
+          success: false,
+          error: 'Invalid request'
+        });
       }
 
     } catch (error: any) {
-      console.error('❌ ERROR IN CONTROLLER:', error);
-      console.error('❌ ERROR STACK:', error.stack);
-      console.error('❌ ERROR MESSAGE:', error.message);
-      console.error('❌ ERROR NAME:', error.name);
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
-        details: error.message
+        error: 'Invalid request'
       });
     }
   }
 
+
   /**
    * Get available tones
    * GET /api/email/tones
+   * PUBLIC - No authentication required
    */
   async getTones(req: Request, res: Response): Promise<void> {
     res.json({
@@ -95,6 +89,7 @@ class EmailController {
   /**
    * Get available audience types
    * GET /api/email/audiences
+   * PUBLIC - No authentication required
    */
   async getAudiences(req: Request, res: Response): Promise<void> {
     res.json({
@@ -111,6 +106,7 @@ class EmailController {
   /**
    * Get email templates
    * GET /api/email/templates
+   * PUBLIC - No authentication required
    */
   async getTemplates(req: Request, res: Response): Promise<void> {
     res.json({

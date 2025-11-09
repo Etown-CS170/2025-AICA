@@ -1,3 +1,4 @@
+// backend/src/middleware/auth.middleware.ts
 import { Request, Response, NextFunction } from 'express';
 import { auth } from 'express-oauth2-jwt-bearer';
 
@@ -10,10 +11,10 @@ export const checkJwt = auth({
 
 // Custom middleware to extract user info
 export const extractUser = (req: Request, res: Response, next: NextFunction) => {
+  // console.log('Authorization header:', req.headers.authorization);
   if (req.auth) {
-    // User info is available in req.auth
-    // You can access: req.auth.payload.sub (user ID)
-    console.log('Authenticated user:', req.auth.payload.sub);
+    // console.log('✅ Authenticated user:', req.auth.payload.sub);
+    // console.log('✅ User email:', req.auth.payload.email);
   }
   next();
 };

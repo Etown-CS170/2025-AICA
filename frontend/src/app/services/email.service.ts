@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, of } from 'rxjs';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError, of, firstValueFrom } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { EmailRequest, EmailResponse, Tone, Audience, Template } from '../models/email.model';
 import { environment } from '../../environments/environment';
@@ -16,11 +16,49 @@ export class EmailService {
   /**
    * Generate email using backend API
    */
-  generateEmail(request: EmailRequest): Observable<EmailResponse> {
-    return this.http.post<EmailResponse>(`${this.apiUrl}/email/generate`, request)
-      .pipe(
-        catchError(this.handleError)
+  async generateEmail(request: EmailRequest, token?: string): Promise<EmailResponse> {
+    // Validate request fields
+    if (!request.prompt || typeof request.prompt !== 'string' || !request.prompt.trim()) {
+      return {
+        success: false,
+        email: '',
+        error: 'Prompt cannot be empty'
+      };
+    }
+
+    if (!request.tone || typeof request.tone !== 'string' || !request.tone.trim()) {
+      return {
+        success: false,
+        email: '',
+        error: 'Tone must be a non-empty string'
+      };
+    }
+
+    if (!request.audience || typeof request.audience !== 'string' || !request.audience.trim()) {
+      return {
+        success: false,
+        email: '',
+        error: 'Audience must be a non-empty string'
+      };
+    }
+
+    let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    try {
+      const response = await firstValueFrom(
+        this.http.post<EmailResponse>(`${this.apiUrl}/email/generate`, request, { headers })
       );
+      return response;
+    } catch (error) {
+      return {
+        success: false,
+        email: '',
+        error: 'Unable to generate email at this time'
+      };
+    }
   }
 
   /**
@@ -67,20 +105,11 @@ export class EmailService {
   }
 
   /**
-   * Handle HTTP errors
+   * Handle HTTP errors (minimal message)
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      // Client-side error
-      errorMessage = `Error: ${error.error.message}`;
-    } else {
-      // Server-side error
-      errorMessage = error.error?.error || `Error Code: ${error.status}\nMessage: ${error.message}`;
-    }
-    
-    console.error('EmailService Error:', errorMessage);
+    const errorMessage = 'An unexpected error occurred.';
+    // console.error('EmailService Error', error);
     return throwError(() => new Error(errorMessage));
   }
 
