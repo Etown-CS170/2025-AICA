@@ -12,56 +12,49 @@ class EmailController {
     try {
       const { prompt, tone, audience }: EmailGenerationRequest = req.body;
 
-      // Extract authenticated user info from JWT token
       const userId = (req as any).auth?.payload?.sub;
       const userEmail = (req as any).auth?.payload?.email;
-      
-      // This should never happen because checkJwt middleware validates first
+
       if (!userId) {
         res.status(401).json({
           success: false,
-          error: 'Authentication required'
+          error: 'Unauthorized request'
         });
         return;
       }
 
-      console.log(`📨 User ${userId} (${userEmail}) generating email`);
+      // console.log(`📨 User ${userId} (${userEmail}) generating email`);
 
-      // Validate required fields
       if (!prompt || !tone || !audience) {
         res.status(400).json({
           success: false,
-          error: 'Missing required fields: prompt, tone, and audience are required'
+          error: 'Invalid request'
         });
         return;
       }
 
-      // Validate that fields are strings
       if (typeof prompt !== 'string' || typeof tone !== 'string' || typeof audience !== 'string') {
         res.status(400).json({
           success: false,
-          error: 'Invalid field types: prompt, tone, and audience must be strings'
+          error: 'Invalid request'
         });
         return;
       }
 
-      // Trim whitespace
       const cleanedPrompt = prompt.trim();
       const cleanedTone = tone.trim();
       const cleanedAudience = audience.trim();
 
-      // Validate non-empty after trimming
       if (!cleanedPrompt || !cleanedTone || !cleanedAudience) {
         res.status(400).json({
           success: false,
-          error: 'Fields cannot be empty or contain only whitespace'
+          error: 'Invalid request'
         });
         return;
       }
 
-      console.log(`📨 Request received - Prompt: "${cleanedPrompt.substring(0, 50)}...", Tone: ${cleanedTone}, Audience: ${cleanedAudience}`);
+      // console.log(`📨 Request received - Prompt: "${cleanedPrompt.substring(0, 50)}...", Tone: ${cleanedTone}, Audience: ${cleanedAudience}`);
 
-      // Generate email
       const result = await emailService.generateEmail({ 
         prompt: cleanedPrompt, 
         tone: cleanedTone, 
@@ -71,16 +64,18 @@ class EmailController {
       if (result.success) {
         res.status(200).json(result);
       } else {
-        console.error('❌ Email generation failed:', result.error);
-        res.status(500).json(result);
+        // console.error('❌ Email generation failed');
+        res.status(500).json({
+          success: false,
+          error: 'An error occurred while generating the email'
+        });
       }
 
     } catch (error: any) {
-      console.error('❌ ERROR IN CONTROLLER:', error);
+      // console.error('❌ ERROR IN CONTROLLER');
       res.status(500).json({
         success: false,
-        error: 'Internal server error',
-        details: error.message
+        error: 'Internal server error'
       });
     }
   }

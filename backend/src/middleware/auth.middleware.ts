@@ -11,14 +11,13 @@ export const checkJwt = auth({
 
 // Custom middleware to extract user info
 export const extractUser = (req: Request, res: Response, next: NextFunction) => {
-  console.log('Authorization header:', req.headers.authorization);
+  // console.log('Authorization header:', req.headers.authorization);
   if (req.auth) {
-    console.log('✅ Authenticated user:', req.auth.payload.sub);
-    console.log('✅ User email:', req.auth.payload.email);
+    // console.log('✅ Authenticated user:', req.auth.payload.sub);
+    // console.log('✅ User email:', req.auth.payload.email);
   }
   next();
 };
-
 
 // Optional: Middleware to make auth optional
 export const optionalAuth = (req: Request, res: Response, next: NextFunction) => {
