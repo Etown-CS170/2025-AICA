@@ -1,10 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
-import { Observable, throwError, of } from 'rxjs';
+import { Observable, throwError, of, firstValueFrom } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { EmailRequest, Tone, Audience, Template } from '../models/email.model';
 import { environment } from '../../environments/environment';
-import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -16,8 +15,6 @@ export class EmailService {
 
   /**
    * Generate email using backend API
-   * @param request EmailRequest object
-   * @param token Optional JWT token for authorization
    */
   async generateEmail(request: EmailRequest, token?: string): Promise<any> {
     let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
@@ -75,18 +72,11 @@ export class EmailService {
   }
 
   /**
-   * Handle HTTP errors
+   * Handle HTTP errors (minimal message)
    */
   private handleError(error: HttpErrorResponse): Observable<never> {
-    let errorMessage = 'An error occurred';
-    
-    if (error.error instanceof ErrorEvent) {
-      errorMessage = `Error: ${error.error.message}`;
-    } else {
-      errorMessage = error.error?.error || `Error Code: ${error.status}\nMessage: ${error.message}`;
-    }
-    
-    console.error('EmailService Error:', errorMessage);
+    const errorMessage = 'An unexpected error occurred.';
+    // console.error('EmailService Error');
     return throwError(() => new Error(errorMessage));
   }
 

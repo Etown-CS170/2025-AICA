@@ -23,4 +23,4 @@ bootstrapApplication(AppComponent, {
       }
     })
   ]
-}).catch(err => console.error(err));
+}).catch(() => console.error('⚠️ Application failed to start'));

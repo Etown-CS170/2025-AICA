@@ -10,7 +10,7 @@ import {
 import { EmailService } from './services/email.service';
 import { 
   Message, Tone, Audience, Template, 
-  ToneType, AudienceType, EmailRequest 
+  EmailRequest 
 } from './models/email.model';
 import { AuthService } from '@auth0/auth0-angular';
 import { environment } from '../environments/environment';
@@ -25,9 +25,8 @@ import { environment } from '../environments/environment';
 })
 export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
-  
   private shouldScrollToBottom = false;
-  
+
   // Lucide icons
   readonly Mail = Mail;
   readonly Send = Send;
@@ -40,7 +39,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly Edit3 = Edit3;
   readonly LogIn = LogIn;
   readonly LogOut = LogOut;
-  
+
   // Auth observables
   get isAuthenticated$() {
     return this.auth.isAuthenticated$;
@@ -69,13 +68,12 @@ export class AppComponent implements OnInit, AfterViewChecked {
   audiences: Audience[] = [];
   templates: Template[] = [];
 
+  private accessToken: string | null = null;
+
   constructor(
     private emailService: EmailService,
     public auth: AuthService
   ) {}
-
-  // Add a new property for the token
-  private accessToken: string | null = null;
 
   ngOnInit(): void {
     this.loadTones();
@@ -83,40 +81,24 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.loadTemplates();
     this.checkApiHealth();
 
-    // Subscribe to authentication state
     this.auth.isAuthenticated$.subscribe(isAuth => {
-      console.log('🔐 Is Authenticated:', isAuth);
-
       if (isAuth) {
-        // Get token and store it locally
         this.auth.getAccessTokenSilently({
           authorizationParams: {
             audience: 'https://aica-backend-api'
           }
         }).subscribe({
           next: (token) => {
-            console.log('🎟️ Access Token (first 50 chars):', token.substring(0, 50) + '...');
-            this.accessToken = token;  // <-- Save the token
-
-            // Optionally decode payload for debugging
-            try {
-              const payload = JSON.parse(atob(token.split('.')[1]));
-              console.log('🎟️ Token Payload:', payload);
-            } catch (err) {
-              console.error('❌ Error decoding token payload:', err);
-            }
+            this.accessToken = token;
           },
-          error: (err) => console.error('❌ Error getting token:', err)
+          error: () => {
+            // Suppress specific token retrieval errors
+          }
         });
       }
     });
-
-    this.auth.user$.subscribe(user => console.log('👤 User:', user));
   }
 
-  /**
-   * Auth methods
-   */
   login(): void {
     this.auth.loginWithRedirect({
       authorizationParams: {
@@ -141,138 +123,80 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  /**
-   * Scroll to bottom of messages container
-   */
   private scrollToBottom(): void {
     try {
       if (this.messagesContainer) {
         this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
       }
-    } catch (err) {
-      console.error('Error scrolling to bottom:', err);
+    } catch {
+      // Silent scroll failure
     }
   }
 
-  /**
-   * Load available tones from API
-   */
   loadTones(): void {
     this.emailService.getTones().subscribe({
-      next: (tones) => {
-        this.tones = tones;
-      },
-      error: (error) => {
-        console.error('Error loading tones:', error);
-        this.tones = this.getDefaultTones();
-      }
+      next: (tones) => this.tones = tones,
+      error: () => this.tones = this.getDefaultTones()
     });
   }
 
-  /**
-   * Load available audiences from API
-   */
   loadAudiences(): void {
     this.emailService.getAudiences().subscribe({
-      next: (audiences) => {
-        this.audiences = audiences;
-      },
-      error: (error) => {
-        console.error('Error loading audiences:', error);
-        this.audiences = this.getDefaultAudiences();
-      }
+      next: (audiences) => this.audiences = audiences,
+      error: () => this.audiences = this.getDefaultAudiences()
     });
   }
 
-  /**
-   * Load email templates from API
-   */
   loadTemplates(): void {
     this.emailService.getTemplates().subscribe({
-      next: (templates) => {
-        this.templates = templates;
-      },
-      error: (error) => {
-        console.error('Error loading templates:', error);
-        this.templates = this.getDefaultTemplates();
-      }
+      next: (templates) => this.templates = templates,
+      error: () => this.templates = this.getDefaultTemplates()
     });
   }
 
-  /**
-   * Check API health status
-   */
   checkApiHealth(): void {
     this.emailService.checkHealth().subscribe({
-      next: (response) => {
-        console.log('API Health Check:', response);
-      },
-      error: (error) => {
-        console.error('API Health Check Failed:', error);
-        this.errorMessage = 'Backend API is not responding. Please ensure the server is running.';
+      next: () => {},
+      error: () => {
+        this.errorMessage = 'Unable to reach the backend service.';
       }
     });
   }
 
-  /**
-   * Toggle custom tone input
-   */
   toggleCustomTone(): void {
     this.isCustomTone = !this.isCustomTone;
-    if (this.isCustomTone) {
-      this.customTone = '';
-    }
+    if (this.isCustomTone) this.customTone = '';
   }
 
-  /**
-   * Toggle custom audience input
-   */
   toggleCustomAudience(): void {
     this.isCustomAudience = !this.isCustomAudience;
-    if (this.isCustomAudience) {
-      this.customAudience = '';
-    }
+    if (this.isCustomAudience) this.customAudience = '';
   }
 
-  /**
-   * Select a tone button
-   */
   selectTone(toneId: string): void {
     this.selectedTone = toneId;
     this.isCustomTone = false;
     this.customTone = '';
   }
 
-  /**
-   * Select an audience button
-   */
   selectAudience(audienceId: string): void {
     this.selectedAudience = audienceId;
     this.isCustomAudience = false;
     this.customAudience = '';
   }
 
-  /**
-   * Get the current tone value (custom or selected)
-   */
   getCurrentTone(): string {
-    return this.isCustomTone && this.customTone.trim() 
-      ? this.customTone.trim() 
+    return this.isCustomTone && this.customTone.trim()
+      ? this.customTone.trim()
       : this.selectedTone;
   }
 
-  /**
-   * Get the current audience value (custom or selected)
-   */
   getCurrentAudience(): string {
-    return this.isCustomAudience && this.customAudience.trim() 
-      ? this.customAudience.trim() 
+    return this.isCustomAudience && this.customAudience.trim()
+      ? this.customAudience.trim()
       : this.selectedAudience;
   }
 
-  /**
-   * Handle send button click
-   */
   async onSend(): Promise<void> {
     if (!this.inputText.trim() || this.isGenerating) return;
 
@@ -302,7 +226,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.isGenerating = true;
 
     try {
-      // Pass the access token to EmailService
       const response: any = await this.emailService.generateEmail(request, this.accessToken ?? undefined);
       this.isGenerating = false;
 
@@ -317,38 +240,26 @@ export class AppComponent implements OnInit, AfterViewChecked {
         this.lastGeneratedEmail = response.email;
         this.shouldScrollToBottom = true;
       } else {
-        this.errorMessage = response.error || 'Failed to generate email';
+        this.errorMessage = 'Unable to generate an email at this time.';
       }
-    } catch (error: any) {
+    } catch {
       this.isGenerating = false;
-      this.errorMessage = error.message || 'An error occurred while generating the email';
-      console.error('Generation error:', error);
+      this.errorMessage = 'A problem occurred while generating your email.';
     }
   }
 
-  /**
-   * Select a template
-   */
   selectTemplate(template: Template): void {
     this.inputText = template.prompt;
     this.selectedTemplate = template.id;
   }
 
-  /**
-   * Copy email to clipboard
-   */
   copyToClipboard(content: string): void {
     navigator.clipboard.writeText(content).then(() => {
       this.showCopySuccess = true;
-      setTimeout(() => {
-        this.showCopySuccess = false;
-      }, 2000);
+      setTimeout(() => this.showCopySuccess = false, 2000);
     });
   }
 
-  /**
-   * Reset conversation
-   */
   reset(): void {
     this.messages = [];
     this.lastGeneratedEmail = '';
@@ -363,9 +274,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.selectedTemplate = '';
   }
 
-  /**
-   * Get icon for audience type
-   */
   getAudienceIcon(audienceId: string): LucideIconData {
     const iconMap: Record<string, LucideIconData> = {
       'professor': this.GraduationCap,
@@ -376,9 +284,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     return iconMap[audienceId] || this.User;
   }
 
-  /**
-   * Handle Enter key in input
-   */
   onKeyPress(event: KeyboardEvent): void {
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
@@ -386,9 +291,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
-  /**
-   * Default fallback data
-   */
   private getDefaultTones(): Tone[] {
     return [
       { id: 'professional', label: 'Professional', color: 'bg-blue-500' },
