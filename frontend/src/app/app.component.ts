@@ -1,7 +1,6 @@
 import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClientModule } from '@angular/common/http';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
@@ -19,7 +18,7 @@ import { distinctUntilChanged } from 'rxjs/operators';
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, HttpClientModule, LucideAngularModule],
+  imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
   providers: [EmailService]
