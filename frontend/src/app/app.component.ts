@@ -13,6 +13,7 @@ import {
   ToneType, AudienceType, EmailRequest 
 } from './models/email.model';
 import { AuthService } from '@auth0/auth0-angular';
+import { environment } from '../environments/environment';
 
 @Component({
   selector: 'app-root',
@@ -73,11 +74,64 @@ export class AppComponent implements OnInit, AfterViewChecked {
     public auth: AuthService
   ) {}
 
+  // Add a new property for the token
+  private accessToken: string | null = null;
+
   ngOnInit(): void {
     this.loadTones();
     this.loadAudiences();
     this.loadTemplates();
     this.checkApiHealth();
+
+    // Subscribe to authentication state
+    this.auth.isAuthenticated$.subscribe(isAuth => {
+      console.log('🔐 Is Authenticated:', isAuth);
+
+      if (isAuth) {
+        // Get token and store it locally
+        this.auth.getAccessTokenSilently({
+          authorizationParams: {
+            audience: 'https://aica-backend-api'
+          }
+        }).subscribe({
+          next: (token) => {
+            console.log('🎟️ Access Token (first 50 chars):', token.substring(0, 50) + '...');
+            this.accessToken = token;  // <-- Save the token
+
+            // Optionally decode payload for debugging
+            try {
+              const payload = JSON.parse(atob(token.split('.')[1]));
+              console.log('🎟️ Token Payload:', payload);
+            } catch (err) {
+              console.error('❌ Error decoding token payload:', err);
+            }
+          },
+          error: (err) => console.error('❌ Error getting token:', err)
+        });
+      }
+    });
+
+    this.auth.user$.subscribe(user => console.log('👤 User:', user));
+  }
+
+  /**
+   * Auth methods
+   */
+  login(): void {
+    this.auth.loginWithRedirect({
+      authorizationParams: {
+        audience: environment.auth0.authorizationParams.audience,
+        scope: 'openid profile email',
+      },
+    });
+  }
+
+  logout(): void {
+    this.auth.logout({
+      logoutParams: {
+        returnTo: window.location.origin
+      }
+    });
   }
 
   ngAfterViewChecked(): void {
@@ -219,63 +273,57 @@ export class AppComponent implements OnInit, AfterViewChecked {
   /**
    * Handle send button click
    */
-  onSend(): void {
-    if (!this.inputText.trim() || this.isGenerating) {
-      return;
-    }
+  async onSend(): Promise<void> {
+    if (!this.inputText.trim() || this.isGenerating) return;
 
     const tone = this.getCurrentTone();
     const audience = this.getCurrentAudience();
 
-    // Add user message
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
       content: this.inputText,
-      tone: tone,
-      audience: audience,
+      tone,
+      audience,
       timestamp: new Date()
     };
 
     this.messages.push(userMessage);
     this.shouldScrollToBottom = true;
-    
-    const userPrompt = this.inputText;
+
+    const request: EmailRequest = {
+      prompt: this.inputText,
+      tone,
+      audience
+    };
+
     this.inputText = '';
     this.errorMessage = '';
     this.isGenerating = true;
 
-    // Call API to generate email
-    const request: EmailRequest = {
-      prompt: userPrompt,
-      tone: tone,
-      audience: audience
-    };
+    try {
+      // Pass the access token to EmailService
+      const response: any = await this.emailService.generateEmail(request, this.accessToken ?? undefined);
+      this.isGenerating = false;
 
-    this.emailService.generateEmail(request).subscribe({
-      next: (response) => {
-        this.isGenerating = false;
-        
-        if (response.success && response.email) {
-          const aiMessage: Message = {
-            id: Date.now() + 1,
-            type: 'ai',
-            content: response.email,
-            timestamp: new Date()
-          };
-          this.messages.push(aiMessage);
-          this.lastGeneratedEmail = response.email;
-          this.shouldScrollToBottom = true;
-        } else {
-          this.errorMessage = response.error || 'Failed to generate email';
-        }
-      },
-      error: (error) => {
-        this.isGenerating = false;
-        this.errorMessage = error.message || 'An error occurred while generating the email';
-        console.error('Generation error:', error);
+      if (response.success && response.email) {
+        const aiMessage: Message = {
+          id: Date.now() + 1,
+          type: 'ai',
+          content: response.email,
+          timestamp: new Date()
+        };
+        this.messages.push(aiMessage);
+        this.lastGeneratedEmail = response.email;
+        this.shouldScrollToBottom = true;
+      } else {
+        this.errorMessage = response.error || 'Failed to generate email';
       }
-    });
+    } catch (error: any) {
+      this.isGenerating = false;
+      this.errorMessage = error.message || 'An error occurred while generating the email';
+      console.error('Generation error:', error);
+    }
   }
 
   /**
@@ -313,21 +361,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.selectedTone = 'professional';
     this.selectedAudience = 'professor';
     this.selectedTemplate = '';
-  }
-
-  /**
-   * Auth methods
-   */
-  login(): void {
-    this.auth.loginWithRedirect();
-  }
-
-  logout(): void {
-    this.auth.logout({
-      logoutParams: {
-        returnTo: window.location.origin
-      }
-    });
   }
 
   /**

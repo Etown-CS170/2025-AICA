@@ -1,3 +1,4 @@
+// backend/src/controllers/email.controller.ts
 import { Request, Response } from 'express';
 import emailService, { EmailGenerationRequest } from '../services/email.service';
 
@@ -5,14 +6,25 @@ class EmailController {
   /**
    * Generate email based on user input
    * POST /api/email/generate
+   * PROTECTED - Requires authentication
    */
   async generateEmail(req: Request, res: Response): Promise<void> {
     try {
       const { prompt, tone, audience }: EmailGenerationRequest = req.body;
 
-      // Access authenticated user (added for Auth0) - optional for now
-      const userId = (req as any).auth?.payload?.sub || 'anonymous';
-      const userEmail = (req as any).auth?.payload?.email || 'no-email';
+      // Extract authenticated user info from JWT token
+      const userId = (req as any).auth?.payload?.sub;
+      const userEmail = (req as any).auth?.payload?.email;
+      
+      // This should never happen because checkJwt middleware validates first
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: 'Authentication required'
+        });
+        return;
+      }
+
       console.log(`📨 User ${userId} (${userEmail}) generating email`);
 
       // Validate required fields
@@ -49,7 +61,7 @@ class EmailController {
 
       console.log(`📨 Request received - Prompt: "${cleanedPrompt.substring(0, 50)}...", Tone: ${cleanedTone}, Audience: ${cleanedAudience}`);
 
-      // Generate email (now accepts any string values)
+      // Generate email
       const result = await emailService.generateEmail({ 
         prompt: cleanedPrompt, 
         tone: cleanedTone, 
@@ -65,9 +77,6 @@ class EmailController {
 
     } catch (error: any) {
       console.error('❌ ERROR IN CONTROLLER:', error);
-      console.error('❌ ERROR STACK:', error.stack);
-      console.error('❌ ERROR MESSAGE:', error.message);
-      console.error('❌ ERROR NAME:', error.name);
       res.status(500).json({
         success: false,
         error: 'Internal server error',
@@ -79,6 +88,7 @@ class EmailController {
   /**
    * Get available tones
    * GET /api/email/tones
+   * PUBLIC - No authentication required
    */
   async getTones(req: Request, res: Response): Promise<void> {
     res.json({
@@ -95,6 +105,7 @@ class EmailController {
   /**
    * Get available audience types
    * GET /api/email/audiences
+   * PUBLIC - No authentication required
    */
   async getAudiences(req: Request, res: Response): Promise<void> {
     res.json({
@@ -111,6 +122,7 @@ class EmailController {
   /**
    * Get email templates
    * GET /api/email/templates
+   * PUBLIC - No authentication required
    */
   async getTemplates(req: Request, res: Response): Promise<void> {
     res.json({

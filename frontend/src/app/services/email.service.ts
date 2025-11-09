@@ -1,9 +1,10 @@
 import { Injectable } from '@angular/core';
-import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
-import { EmailRequest, EmailResponse, Tone, Audience, Template } from '../models/email.model';
+import { EmailRequest, Tone, Audience, Template } from '../models/email.model';
 import { environment } from '../../environments/environment';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable({
   providedIn: 'root'
@@ -15,12 +16,19 @@ export class EmailService {
 
   /**
    * Generate email using backend API
+   * @param request EmailRequest object
+   * @param token Optional JWT token for authorization
    */
-  generateEmail(request: EmailRequest): Observable<EmailResponse> {
-    return this.http.post<EmailResponse>(`${this.apiUrl}/email/generate`, request)
-      .pipe(
-        catchError(this.handleError)
-      );
+  async generateEmail(request: EmailRequest, token?: string): Promise<any> {
+    let headers = new HttpHeaders({ 'Content-Type': 'application/json' });
+
+    if (token) {
+      headers = headers.set('Authorization', `Bearer ${token}`);
+    }
+
+    return firstValueFrom(
+      this.http.post(`${this.apiUrl}/email/generate`, request, { headers })
+    );
   }
 
   /**
@@ -73,10 +81,8 @@ export class EmailService {
     let errorMessage = 'An error occurred';
     
     if (error.error instanceof ErrorEvent) {
-      // Client-side error
       errorMessage = `Error: ${error.error.message}`;
     } else {
-      // Server-side error
       errorMessage = error.error?.error || `Error Code: ${error.status}\nMessage: ${error.message}`;
     }
     

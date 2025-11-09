@@ -1,3 +1,4 @@
+// frontend/src/main.ts
 import { bootstrapApplication } from '@angular/platform-browser';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideAuth0 } from '@auth0/auth0-angular';
@@ -11,19 +12,14 @@ bootstrapApplication(AppComponent, {
       withInterceptors([authHttpInterceptorFn])
     ),
     provideAuth0({
-      ...environment.auth0,
+      domain: environment.auth0.domain,
+      clientId: environment.auth0.clientId,
+      authorizationParams: {
+        redirect_uri: environment.auth0.authorizationParams.redirect_uri,
+        audience: environment.auth0.authorizationParams.audience
+      },
       httpInterceptor: {
-        allowedList: [
-          'http://localhost:3000/api/*',  // Match ALL api endpoints
-          {
-            uri: 'http://localhost:3000/api/*',
-            tokenOptions: {
-              authorizationParams: {
-                audience: 'https://dev-c8488bb6p3agyt65.us.auth0.com/api/v2/'
-              }
-            }
-          }
-        ]
+        allowedList: ['http://localhost:3000/api/email/generate']
       }
     })
   ]

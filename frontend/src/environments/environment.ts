@@ -1,3 +1,4 @@
+// frontend/src/environments/environment.ts
 export const environment = {
   production: false,
   apiUrl: 'http://localhost:3000/api',
@@ -6,7 +7,9 @@ export const environment = {
     clientId: 'mGp3vnXF3Qijavt7Yem4gofbnnjek99I',
     authorizationParams: {
       redirect_uri: window.location.origin,
-      audience: 'https://dev-c8488bb6p3agyt65.us.auth0.com/api/v2/'
-    }
+      audience: 'https://aica-backend-api'
+    },
+    cacheLocation: 'localstorage' as const,
+    useRefreshTokens: true
   }
 };
