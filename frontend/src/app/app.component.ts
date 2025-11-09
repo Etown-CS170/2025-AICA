@@ -128,8 +128,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
       if (this.messagesContainer) {
         this.messagesContainer.nativeElement.scrollTop = this.messagesContainer.nativeElement.scrollHeight;
       }
-    } catch {
-      // Silent scroll failure
+    } catch (error) {
+      console.error('Scroll error:', error);
     }
   }
 
