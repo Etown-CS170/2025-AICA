@@ -39,7 +39,7 @@ class PreferencesController {
         return;
       }
 
-      if (!Array.isArray(tones) || tones.length > 5) {
+      if (!Array.isArray(tones) || tones.length > 8) {
         res.status(400).json({ success: false, error: 'Invalid tones data' });
         return;
       }
@@ -107,7 +107,7 @@ class PreferencesController {
         return;
       }
 
-      if (!Array.isArray(audiences) || audiences.length > 4) {
+      if (!Array.isArray(audiences) || audiences.length > 8) {
         res.status(400).json({ success: false, error: 'Invalid audiences data' });
         return;
       }
@@ -175,7 +175,7 @@ class PreferencesController {
         return;
       }
 
-      if (!Array.isArray(templates) || templates.length > 6) {
+      if (!Array.isArray(templates) || templates.length > 8) {
         res.status(400).json({ success: false, error: 'Invalid templates data' });
         return;
       }

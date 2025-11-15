@@ -448,7 +448,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.errorMessage = '';
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save email to library';
+      this.errorMessage = 'Failed to save email. Maximum 8 saved emails allowed.';
     }
   }
 
@@ -471,7 +471,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save tone. Maximum 5 tones allowed.';
+      this.errorMessage = 'Failed to save tone. Maximum 8 tones allowed.';
     }
   }
 
@@ -497,7 +497,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save audience. Maximum 4 audiences allowed.';
+      this.errorMessage = 'Failed to save audience. Maximum 8 audiences allowed.';
     }
   }
 
@@ -521,7 +521,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save template. Maximum 6 templates allowed.';
+      this.errorMessage = 'Failed to save template. Maximum 8 templates allowed.';
     }
   }
 
@@ -534,18 +534,18 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.deleteTone(this.accessToken, toneId);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete tone. Minimum 4 tones required.';
+      this.errorMessage = 'Failed to delete tone. Minimum 1 tone required.';
     }
   }
 
-  // Delete audience from settings - CORRECTED
+  // Delete audience from settings
   async deleteAudienceFromSettings(audienceId: string): Promise<void> {
     if (!this.accessToken) return;
 
     const updatedAudiences = this.audiences.filter(a => a.id !== audienceId);
 
-    if (updatedAudiences.length < 4) {
-      this.errorMessage = 'Minimum 4 audiences required.';
+    if (updatedAudiences.length < 1) {
+      this.errorMessage = 'Minimum 1 audience required.';
       return;
     }
 
@@ -563,7 +563,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.deleteTemplate(this.accessToken, templateId);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete template. Minimum 6 templates required.';
+      this.errorMessage = 'Failed to delete template. Minimum 1 template required.';
     }
   }
 
@@ -686,7 +686,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.errorMessage = '';
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save email to library';
+      this.errorMessage = 'Failed to save email. Maximum 8 saved emails allowed.';
     }
   }
 
@@ -727,7 +727,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add tone. Maximum 5 tones allowed.';
+      this.errorMessage = 'Failed to add tone. Maximum 8 tones allowed.';
     }
   }
 
@@ -803,7 +803,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add audience. Maximum 4 audiences allowed.';
+      this.errorMessage = 'Failed to add audience. Maximum 8 audiences allowed.';
     }
   }
 
@@ -876,7 +876,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add template. Maximum 6 templates allowed.';
+      this.errorMessage = 'Failed to add template. Maximum 8 templates allowed.';
     }
   }
 

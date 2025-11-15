@@ -50,8 +50,8 @@ class UserPreferencesService {
   // ==================== TONES ====================
   
   async updateTones(userId: string, tones: ITone[]): Promise<IUserPreferences | null> {
-    if (tones.length > 5) {
-      throw new Error('Maximum 5 tones allowed');
+    if (tones.length > 8) {
+      throw new Error('Maximum 8 tones allowed');
     }
 
     return await UserPreferences.findOneAndUpdate(
@@ -64,8 +64,8 @@ class UserPreferencesService {
   async addTone(userId: string, tone: ITone): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
-    if (prefs.tones.length >= 5) {
-      throw new Error('Maximum 5 tones allowed');
+    if (prefs.tones.length >= 8) {
+      throw new Error('Maximum 8 tones allowed');
     }
 
     prefs.tones.push(tone);
@@ -75,8 +75,8 @@ class UserPreferencesService {
   async deleteTone(userId: string, toneId: string): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
-    if (prefs.tones.length <= 4) {
-      throw new Error('Minimum 4 tones required');
+    if (prefs.tones.length <= 1) {
+      throw new Error('Minimum 1 tone required');
     }
 
     prefs.tones = prefs.tones.filter(t => t.id !== toneId);
@@ -86,8 +86,8 @@ class UserPreferencesService {
   // ==================== AUDIENCES ====================
   
   async updateAudiences(userId: string, audiences: IAudience[]): Promise<IUserPreferences | null> {
-    if (audiences.length > 4) {
-      throw new Error('Maximum 4 audiences allowed');
+    if (audiences.length > 8) {
+      throw new Error('Maximum 8 audiences allowed');
     }
 
     return await UserPreferences.findOneAndUpdate(
@@ -100,8 +100,8 @@ class UserPreferencesService {
   async addAudience(userId: string, audience: IAudience): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
-    if (prefs.audiences.length >= 4) {
-      throw new Error('Maximum 4 audiences allowed');
+    if (prefs.audiences.length >= 8) {
+      throw new Error('Maximum 8 audiences allowed');
     }
 
     prefs.audiences.push(audience);
@@ -111,8 +111,8 @@ class UserPreferencesService {
   async deleteAudience(userId: string, audienceId: string): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
-    if (prefs.audiences.length <= 4) {
-      throw new Error('Minimum 4 audiences required');
+    if (prefs.audiences.length <= 1) {
+      throw new Error('Minimum 1 audience required');
     }
 
     prefs.audiences = prefs.audiences.filter(a => a.id !== audienceId);
@@ -122,8 +122,8 @@ class UserPreferencesService {
   // ==================== TEMPLATES ====================
   
   async updateTemplates(userId: string, templates: ITemplate[]): Promise<IUserPreferences | null> {
-    if (templates.length > 6) {
-      throw new Error('Maximum 6 templates allowed');
+    if (templates.length > 8) {
+      throw new Error('Maximum 8 templates allowed');
     }
 
     return await UserPreferences.findOneAndUpdate(
@@ -136,8 +136,8 @@ class UserPreferencesService {
   async addTemplate(userId: string, template: ITemplate): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
-    if (prefs.templates.length >= 6) {
-      throw new Error('Maximum 6 templates allowed');
+    if (prefs.templates.length >= 8) {
+      throw new Error('Maximum 8 templates allowed');
     }
 
     prefs.templates.push({ ...template, isCustom: true });
@@ -147,8 +147,8 @@ class UserPreferencesService {
   async deleteTemplate(userId: string, templateId: string): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
-    if (prefs.templates.length <= 6) {
-      throw new Error('Minimum 6 templates required');
+    if (prefs.templates.length <= 1) {
+      throw new Error('Minimum 1 template required');
     }
 
     prefs.templates = prefs.templates.filter(t => t.id !== templateId);
@@ -159,6 +159,11 @@ class UserPreferencesService {
   
 async saveEmail(userId: string, email: Omit<ISavedEmail, 'id' | 'timestamp'>): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
+    
+    // Check if we've hit the limit of 8 saved emails
+    if (prefs.savedEmails.length >= 8) {
+      throw new Error('Maximum 8 saved emails allowed');
+    }
     
     const newEmail: ISavedEmail = {
       ...email,

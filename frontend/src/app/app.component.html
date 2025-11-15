@@ -408,7 +408,7 @@
               My Tones
             </h3>
             <button
-              *ngIf="tones.length < 5"
+              *ngIf="tones.length < 8"
               (click)="toggleAddTone()"
               class="flex items-center gap-2 px-3 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
               <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
@@ -511,8 +511,8 @@
               </div>
             </div>
           </div>
-          <p *ngIf="tones.length >= 5" class="text-sm text-orange-600 dark:text-orange-400 mt-2">
-            Maximum 5 tones reached. Delete one to add more.
+          <p *ngIf="tones.length >= 8" class="text-sm text-orange-600 dark:text-orange-400 mt-2">
+            Maximum 8 tones reached. Delete one to add more.
           </p>
         </div>
 
@@ -524,7 +524,7 @@
               My Audiences
             </h3>
             <button
-              *ngIf="audiences.length < 4"
+              *ngIf="audiences.length < 8"
               (click)="toggleAddAudience()"
               class="flex items-center gap-2 px-3 py-2 text-sm bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
               <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
@@ -626,8 +626,8 @@
               </div>
             </div>
           </div>
-          <p *ngIf="audiences.length >= 4" class="text-sm text-purple-600 dark:text-purple-400 mt-2">
-            Maximum 4 audiences reached. Delete one to add more.
+          <p *ngIf="audiences.length >= 8" class="text-sm text-purple-600 dark:text-purple-400 mt-2">
+            Maximum 8 audiences reached. Delete one to add more.
           </p>
         </div>
 
@@ -639,7 +639,7 @@
               My Quick Templates
             </h3>
             <button
-              *ngIf="templates.length < 6"
+              *ngIf="templates.length < 8"
               (click)="toggleAddTemplate()"
               class="flex items-center gap-2 px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
               <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
@@ -744,8 +744,8 @@
               </div>
             </div>
           </div>
-          <p *ngIf="templates.length >= 6" class="text-sm text-green-600 dark:text-green-400 mt-2">
-            Maximum 6 templates reached. Delete one to add more.
+          <p *ngIf="templates.length >= 8" class="text-sm text-green-600 dark:text-green-400 mt-2">
+            Maximum 8 templates reached. Delete one to add more.
           </p>
         </div>
 
