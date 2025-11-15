@@ -589,7 +589,6 @@
                     <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
                   </button>
                   <button 
-                    *ngIf="audiences.length > 4"
                     (click)="deleteAudienceFromSettings(audience.id)"
                     class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title="Delete">
@@ -708,7 +707,6 @@
                     <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
                   </button>
                   <button 
-                    *ngIf="template.isCustom && templates.length > 6"
                     (click)="deleteTemplateFromSettings(template.id)"
                     class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                     title="Delete">

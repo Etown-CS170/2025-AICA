@@ -18,6 +18,8 @@ router.delete('/tones/:id', (req, res) => preferencesController.deleteTone(req, 
 
 // Audiences
 router.put('/audiences', (req, res) => preferencesController.updateAudiences(req, res));
+router.post('/audiences', (req, res) => preferencesController.addAudience(req, res));
+router.delete('/audiences/:id', (req, res) => preferencesController.deleteAudience(req, res));
 
 // Templates
 router.put('/templates', (req, res) => preferencesController.updateTemplates(req, res));

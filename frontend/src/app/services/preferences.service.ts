@@ -207,6 +207,56 @@ export class PreferencesService {
     }
   }
 
+  async addAudience(token: string, audience: Audience): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.post<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/audiences`,
+          audience,
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.audiencesSubject.next(response.data.audiences);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to add audience:', error);
+      return false;
+    }
+  }
+
+  async deleteAudience(token: string, audienceId: string): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.delete<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/audiences/${audienceId}`,
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.audiencesSubject.next(response.data.audiences);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to delete audience:', error);
+      return false;
+    }
+  }
+
   // ==================== TEMPLATES ====================
   
   async updateTemplates(token: string, templates: Template[]): Promise<boolean> {

@@ -525,6 +525,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  // ==================== DELETE METHODS ====================
+  
   // Delete tone from settings
   async deleteToneFromSettings(toneId: string): Promise<void> {
     if (!this.accessToken) return;
@@ -533,6 +535,24 @@ export class AppComponent implements OnInit, AfterViewChecked {
     
     if (!success) {
       this.errorMessage = 'Failed to delete tone. Minimum 4 tones required.';
+    }
+  }
+
+  // Delete audience from settings - CORRECTED
+  async deleteAudienceFromSettings(audienceId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const updatedAudiences = this.audiences.filter(a => a.id !== audienceId);
+
+    if (updatedAudiences.length < 4) {
+      this.errorMessage = 'Minimum 4 audiences required.';
+      return;
+    }
+
+    const success = await this.preferencesService.updateAudiences(this.accessToken, updatedAudiences);
+    
+    if (!success) {
+      this.errorMessage = 'Failed to delete audience.';
     }
   }
 
@@ -816,23 +836,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
       this.errorMessage = 'Failed to update audience.';
-    }
-  }
-
-  async deleteAudienceFromSettings(audienceId: string): Promise<void> {
-    if (!this.accessToken) return;
-
-    const updatedAudiences = this.audiences.filter(a => a.id !== audienceId);
-
-    if (updatedAudiences.length < 4) {
-      this.errorMessage = 'Minimum 4 audiences required.';
-      return;
-    }
-
-    const success = await this.preferencesService.updateAudiences(this.accessToken, updatedAudiences);
-    
-    if (!success) {
-      this.errorMessage = 'Failed to delete audience.';
     }
   }
 

@@ -120,6 +120,48 @@ class PreferencesController {
   }
 
   /**
+   * Add an audience
+   * POST /api/preferences/audiences
+   */
+  async addAudience(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const audience = req.body;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const updated = await userPreferencesService.addAudience(userId, audience);
+      res.status(201).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  /**
+   * Delete an audience
+   * DELETE /api/preferences/audiences/:id
+   */
+  async deleteAudience(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const { id } = req.params;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const updated = await userPreferencesService.deleteAudience(userId, id);
+      res.status(200).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  /**
    * Update templates
    * PUT /api/preferences/templates
    */
