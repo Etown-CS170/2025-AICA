@@ -1,88 +1,104 @@
-# 2025-AICA
+# AICA
+<img src="frontend/public/aica_complex-nobg.png" alt="AICA Logo" width="150">
 
-AI Communication Assistant - Designed to help users write clearer, context-aware, and tone-appropriate emails quickly and efficiently.
+# ![AICA](https://img.shields.io/badge/AICA-AI%20Communication%20Assistant-blue?style=for-the-badge)
 
-For detailed **project features, design notes, and tech solutions**, please visit the [Project Wiki](https://github.com/Etown-CS170/2025-AICA/wiki/Project-Features-&-Tech-Solutions).
+**AICA** (AI Communication Assistant) is an intelligent email composition platform designed to help users write clearer, context-aware, and tone-appropriate emails quickly and efficiently. Leverage AI-powered assistance to craft professional communications tailored to your audience and purpose.
 
-For access to future implementations and tasks, please visit the [Kanban Board](https://github.com/orgs/Etown-CS170/projects/2) or the [Issues](https://github.com/Etown-CS170/2025-AICA/issues).
+---
 
-## Tech Stack
+## 📚 Documentation
 
-### Backend
-- **Runtime / Language:** Node.js, TypeScript  
-- **Framework:** Express.js  
-- **AI / NLP:** LangChain, @langchain/openai  
-- **Utilities / Middleware:** cors, dotenv  
-- **Development Tools:** nodemon, ts-node, Type Definitions  
-- **Build / Compilation:** TypeScript Compiler (tsc)  
+For detailed guides, technical info, and step-by-step instructions, visit our wiki:
 
-### Frontend
-- **Framework / Language:** Angular 20, TypeScript  
-- **Styling / UI:** Tailwind CSS, Lucide Angular icons  
-- **Reactive Programming / State Management:** RxJS  
-- **Browser / Platform Tools:** Zone.js  
-- **Build / CLI Tools:** Angular CLI, PostCSS, Autoprefixer  
-- **Testing:** Jasmine, Karma
+- [Home](https://github.com/Etown-CS170/2025-AICA/wiki) – Overview, app idea, and motivation
+- [Core Features](https://github.com/Etown-CS170/2025-AICA/wiki/Core-Features) – All features available on AICA
+- [Installation & Setup](https://github.com/Etown-CS170/2025-AICA/wiki/Installation-&-Setup) – How to run the project locally
+- [Tech Stack](https://github.com/Etown-CS170/2025-AICA/wiki/Tech-Stack) – Frontend, backend, and libraries
+- [Project Structure](https://github.com/Etown-CS170/2025-AICA/wiki/Project-Structure) – Directory structure and file organization
+- [Our Team](https://github.com/Etown-CS170/2025-AICA/wiki/Our-Team) - Meet the developers behind AICA
 
-## Setup Guide
+---
 
-### Prerequisites
-- Node.js (v18+ recommended)  
-- npm (v9+ recommended)  
-- Angular CLI (for frontend, install globally if needed):  
-``` bash
-npm install -g @angular/cli 
-```
-- Access to an OPENAI API KEY found at [OPENAI](https://platform.openai.com/settings/organization/api-keys)
+## 🚀 Quick Start
 
-### Clone the Repository
-``` bash
-git clone <your-repo-url>
+### Navigate to project folder
+```bash
 cd 2025-AICA
 ```
 
-### Set up the Backend
-* Navigate to the backend folder:
-``` bash
-cd backend 
-```
-* Install dependencies:
-``` bash
-npm install 
-```
-* Create a .env file for environment variables. Example:
-``` bash 
-OPENAI_API_KEY = your_openai_api_key
-PORT = 5000 
-```
-#### Make sure you never push your API_KEY!!!
-
-* Run the backend in development mode:
-``` bash
-npm run dev 
+### Install all dependencies
+```bash
+npm run install:all
 ```
 
-#### The backend server should now be running at http://localhost:5000.
+### Set up environment variables
 
-### Set up the Frontend
-Navigate to the frontend folder:
-``` bash
-cd frontend 
+**Backend** - Create `backend/.env`:
+```bash
+# Auth0 Configuration
+AUTH0_DOMAIN=your-auth0-domain.auth0.com
+AUTH0_AUDIENCE=https://aica-backend-api
+
+# OpenAI Configuration
+OPENAI_API_KEY=sk-your-openai-api-key-here
+
+# Server Configuration
+PORT=3000
+CORS_ORIGIN=http://localhost:4200
 ```
-Open up another terminal tab while the backend one is still running
-Install dependencies:
-``` bash
-npm install 
+
+**Frontend** - Update `frontend/src/environments/environment.ts`:
+```typescript
+export const environment = {
+  production: false,
+  apiUrl: 'http://localhost:3000/api',
+  auth0: {
+    domain: 'your-auth0-domain.auth0.com',
+    clientId: 'your-auth0-client-id',
+    authorizationParams: {
+      redirect_uri: window.location.origin,
+      audience: 'https://aica-backend-api'
+    }
+  }
+};
 ```
-Run the Angular development server:
-``` bash
+
+Get your API keys:
+- **OpenAI API Key** from the [OpenAI Dashboard](https://platform.openai.com/api-keys)
+- **Auth0 Credentials** from the [Auth0 Dashboard](https://manage.auth0.com/)
+
+⚠️ **Never commit your `.env` file or API keys to version control!**
+
+### Start development servers
+```bash
+npm run dev
+```
+
+This will start both the backend (http://localhost:3000) and frontend (http://localhost:4200) concurrently.
+
+---
+
+## 🛠️ Alternative Setup
+
+### Backend only
+```bash
+cd backend
+```
+```bash
+npm install
+```
+```bash
+npm run dev
+```
+
+### Frontend only
+```bash
+cd frontend
+```
+```bash
+npm install
+```
+```bash
 npm start
 ```
-
-#### The frontend server should now be running at http://localhost:4200.
-
-### Running the Project
-* Make sure the backend server is running on http://localhost:5000.
-* Make sure the frontend server is running on http://localhost:4200.
-* Open your browser and visit http://localhost:4200 to access the app.
-* Interact with the AI features, create email drafts, and test templates.
