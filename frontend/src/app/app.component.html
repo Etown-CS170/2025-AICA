@@ -259,6 +259,14 @@
                   <lucide-icon [img]="Copy" class="w-4 h-4"></lucide-icon>
                   Copy to clipboard
                 </button>
+
+                <!-- Save button for AI messages -->
+                <button *ngIf="message.type === 'ai' && (isAuthenticated$ | async)"
+                        (click)="saveEmailToLibrary(message.content)"
+                        class="mt-2 flex items-center gap-2 px-3 py-2 text-sm border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
+                  <lucide-icon [img]="Save" class="w-4 h-4"></lucide-icon>
+                  Save to Library
+                </button>
               </div>
             </div>
 

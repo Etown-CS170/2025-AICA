@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
-  Edit3, LogIn, LogOut, Moon, Sun
+  Edit3, LogIn, LogOut, Moon, Sun, Save, Settings, X, Trash2, Star
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
 import { PreferencesService } from './services/preferences.service';
@@ -43,6 +43,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly LogOut = LogOut;
   readonly Moon = Moon;
   readonly Sun = Sun;
+  readonly Save = Save;
 
   // Auth observables
   get isAuthenticated$() {
@@ -376,6 +377,38 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showCopySuccess = true;
       setTimeout(() => this.showCopySuccess = false, 2000);
     });
+  }
+
+  async saveEmailToLibrary(content: string): Promise<void> {
+    if (!this.accessToken) {
+      this.errorMessage = 'Please sign in to save emails';
+      return;
+    }
+
+    // Extract subject from email content (first line after "Subject:")
+    const subjectMatch = content.match(/Subject:\s*(.+)/i);
+    const subject = subjectMatch ? subjectMatch[1].trim() : 'Untitled Email';
+
+    // Find the last user message to get tone and audience
+    const lastUserMessage = [...this.messages].reverse().find(m => m.type === 'user');
+    const tone = lastUserMessage?.tone || 'professional';
+    const audience = lastUserMessage?.audience || 'professional';
+
+    const success = await this.preferencesService.saveEmail(this.accessToken, {
+      subject,
+      content,
+      tone,
+      audience,
+      source: 'ai'
+    });
+
+    if (success) {
+      this.showCopySuccess = true;
+      this.errorMessage = '';
+      setTimeout(() => this.showCopySuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save email to library';
+    }
   }
 
   reset(): void {
