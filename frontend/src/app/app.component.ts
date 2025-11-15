@@ -7,6 +7,7 @@ import {
   Edit3, LogIn, LogOut, Moon, Sun
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
+import { PreferencesService } from './services/preferences.service';
 import { ThemeService } from './services/theme.service';
 import { 
   Message, Tone, Audience, Template, 
@@ -22,7 +23,7 @@ import { distinctUntilChanged } from 'rxjs/operators';
   imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  providers: [EmailService]
+  providers: [EmailService, PreferencesService]
 })
 export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
@@ -82,6 +83,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   constructor(
     private emailService: EmailService,
+    private preferencesService: PreferencesService,
     private themeService: ThemeService,
     public auth: AuthService
   ) {}
@@ -92,19 +94,47 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.loadTemplates();
     this.checkApiHealth();
 
-    // Fetch token only when authenticated state changes and accessToken is null
+    // Subscribe to preferences from MongoDB
+    this.preferencesService.tones$.subscribe(tones => {
+      if (tones.length > 0) {
+        this.tones = tones;
+      }
+    });
+
+    this.preferencesService.audiences$.subscribe(audiences => {
+      if (audiences.length > 0) {
+        this.audiences = audiences;
+      }
+    });
+
+    this.preferencesService.templates$.subscribe(templates => {
+      if (templates.length > 0) {
+        this.templates = templates;
+      }
+    });
+
+    // Fetch token and load preferences when authenticated
     this.auth.isAuthenticated$.pipe(distinctUntilChanged()).subscribe(isAuth => {
       if (isAuth && !this.accessToken) {
+        console.log('🔐 User authenticated, fetching token...');
         this.auth.getAccessTokenSilently({
           authorizationParams: {
             audience: 'https://aica-backend-api'
           }
         }).subscribe({
-          next: (token) => {
+          next: async (token) => {
             this.accessToken = token;
+            console.log('✅ Token received, loading preferences from MongoDB...');
+            // Load user preferences from MongoDB
+            const success = await this.preferencesService.loadUserPreferences(token);
+            if (success) {
+              console.log('✅ User preferences loaded from MongoDB!');
+            } else {
+              console.log('⚠️ Failed to load preferences, using defaults');
+            }
           },
-          error: () => {
-            // Suppress specific token retrieval errors
+          error: (err) => {
+            console.error('❌ Token error:', err);
           }
         });
       }
