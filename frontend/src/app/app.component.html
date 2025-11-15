@@ -1,21 +1,36 @@
-<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+<div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 transition-colors duration-300">
   <div class="max-w-6xl mx-auto">
     
     <!-- Header -->
-    <div class="bg-white rounded-2xl shadow-lg p-6 mb-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 mb-6 transition-colors duration-300">
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-3">
           <img src="aica_complex-nobg.png" alt="AICA Logo" class="w-12 h-12">
           <div>
-            <h1 class="text-3xl font-bold text-gray-800">AICA</h1>
-            <p class="text-gray-600 text-sm">AI Communication Assistant</p>
+            <h1 class="text-3xl font-bold text-gray-800 dark:text-white">AICA</h1>
+            <p class="text-gray-600 dark:text-gray-400 text-sm">AI Communication Assistant</p>
           </div>
         </div>
         
-        <!-- Auth Section -->
-        <div class="flex items-center gap-4">
+        <!-- Auth & Theme Section -->
+        <div class="flex items-center gap-3">
+          <!-- Theme Toggle Button -->
+          <button 
+            (click)="toggleTheme()"
+            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            [title]="(theme$ | async) === 'light' ? 'Switch to dark mode' : 'Switch to light mode'">
+            <lucide-icon 
+              *ngIf="(theme$ | async) === 'light'" 
+              [img]="Moon" 
+              class="w-5 h-5 text-gray-700 dark:text-gray-300"></lucide-icon>
+            <lucide-icon 
+              *ngIf="(theme$ | async) === 'dark'" 
+              [img]="Sun" 
+              class="w-5 h-5 text-yellow-400"></lucide-icon>
+          </button>
+
           <!-- Loading State -->
-          <div *ngIf="(isAuthenticated$ | async) === null" class="text-gray-500">
+          <div *ngIf="(isAuthenticated$ | async) === null" class="text-gray-500 dark:text-gray-400">
             Loading...
           </div>
           
@@ -37,8 +52,8 @@
                 [alt]="(user$ | async)?.name"
                 class="w-10 h-10 rounded-full border-2 border-blue-500">
               <div class="text-right">
-                <p class="text-sm font-semibold text-gray-800">{{ (user$ | async)?.name }}</p>
-                <p class="text-xs text-gray-500">{{ (user$ | async)?.email }}</p>
+                <p class="text-sm font-semibold text-gray-800 dark:text-white">{{ (user$ | async)?.name }}</p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ (user$ | async)?.email }}</p>
               </div>
             </div>
             <button 
@@ -54,18 +69,18 @@
 
     <!-- Auth Required Message -->
     <div *ngIf="(isAuthenticated$ | async) === false" 
-        class="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg mb-6">
+        class="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 px-4 py-3 rounded-lg mb-6 transition-colors duration-300">
       <p class="font-medium">🔐 Please sign in to generate emails</p>
       <p class="text-sm mt-1">Sign in with Google, Microsoft, GitHub, Apple, or email/password</p>
     </div>
 
     <!-- Error Message -->
-    <div *ngIf="errorMessage" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg mb-6">
+    <div *ngIf="errorMessage" class="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-700 text-red-700 dark:text-red-300 px-4 py-3 rounded-lg mb-6 transition-colors duration-300">
       <p class="font-medium">{{ errorMessage }}</p>
     </div>
 
     <!-- Success Message -->
-    <div *ngIf="showCopySuccess" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg mb-6 flex items-center gap-2">
+    <div *ngIf="showCopySuccess" class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg mb-6 flex items-center gap-2 transition-colors duration-300">
       <lucide-icon [img]="Copy" class="w-5 h-5"></lucide-icon>
       <p class="font-medium">Copied to clipboard!</p>
     </div>
@@ -76,16 +91,16 @@
       <div class="lg:col-span-1 space-y-4">
         
         <!-- Tone Selection -->
-        <div class="bg-white rounded-xl shadow-md p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 transition-colors duration-300">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+            <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
               <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
               Tone
             </h3>
             <button
               (click)="toggleCustomTone()"
-              [class]="isCustomTone ? 'text-blue-600' : 'text-gray-400'"
-              class="hover:text-blue-600 transition-colors"
+              [class]="isCustomTone ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400 dark:text-gray-500'"
+              class="hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               title="Custom tone">
               <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
             </button>
@@ -97,18 +112,18 @@
               type="text"
               [(ngModel)]="customTone"
               placeholder="e.g., Casual, Urgent, Apologetic..."
-              class="w-full px-3 py-2 border border-blue-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+              class="w-full px-3 py-2 border border-blue-300 dark:border-blue-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
             />
           </div>
           
-          <!-- Default Tone Buttons (hidden when custom mode is active) -->
+          <!-- Default Tone Buttons -->
           <div *ngIf="!isCustomTone" class="space-y-2">
             <button
               *ngFor="let tone of tones"
               (click)="selectTone(tone.id)"
               [class]="selectedTone === tone.id 
                 ? 'bg-blue-500 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
               class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all">
               {{ tone.label }}
             </button>
@@ -116,16 +131,16 @@
         </div>
 
         <!-- Audience Selection -->
-        <div class="bg-white rounded-xl shadow-md p-5">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 transition-colors duration-300">
           <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-gray-800 flex items-center gap-2">
+            <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
               <div class="w-2 h-2 bg-purple-500 rounded-full"></div>
               Audience
             </h3>
             <button
               (click)="toggleCustomAudience()"
-              [class]="isCustomAudience ? 'text-purple-600' : 'text-gray-400'"
-              class="hover:text-purple-600 transition-colors"
+              [class]="isCustomAudience ? 'text-purple-600 dark:text-purple-400' : 'text-gray-400 dark:text-gray-500'"
+              class="hover:text-purple-600 dark:hover:text-purple-400 transition-colors"
               title="Custom audience">
               <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
             </button>
@@ -137,18 +152,18 @@
               [(ngModel)]="customAudience"
               placeholder="e.g., CEO, Client, Team Member&#10;&#10;For multiple recipients:&#10;CEO and CFO&#10;Marketing Team&#10;Professor and Academic Advisor"
               rows="4"
-              class="w-full px-3 py-2 border border-purple-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm resize-none"
+              class="w-full px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
             ></textarea>
           </div>
           
-          <!-- Default Audience Buttons (hidden when custom mode is active) -->
+          <!-- Default Audience Buttons -->
           <div *ngIf="!isCustomAudience" class="space-y-2">
             <button
               *ngFor="let audience of audiences"
               (click)="selectAudience(audience.id)"
               [class]="selectedAudience === audience.id 
                 ? 'bg-purple-500 text-white shadow-md' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+                : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all">
               <lucide-icon [img]="getAudienceIcon(audience.id)" class="w-5 h-5"></lucide-icon>
               <span class="font-medium">{{ audience.label }}</span>
@@ -157,8 +172,8 @@
         </div>
 
         <!-- Templates -->
-        <div class="bg-white rounded-xl shadow-md p-5">
-          <h3 class="font-semibold text-gray-800 mb-3 flex items-center gap-2">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 transition-colors duration-300">
+          <h3 class="font-semibold text-gray-800 dark:text-white mb-3 flex items-center gap-2">
             <div class="w-2 h-2 bg-green-500 rounded-full"></div>
             Quick Templates
           </h3>
@@ -168,7 +183,7 @@
               (click)="selectTemplate(template)"
               [class]="selectedTemplate === template.id 
                 ? 'bg-green-500 text-white shadow-md' 
-                : 'bg-gray-100 hover:bg-green-100 text-gray-700'"
+                : 'bg-gray-100 dark:bg-gray-700 hover:bg-green-100 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300'"
               class="w-full text-left px-4 py-2 rounded-lg text-sm transition-colors">
               {{ template.name }}
             </button>
@@ -179,13 +194,13 @@
 
       <!-- Chat Interface -->
       <div class="lg:col-span-2">
-        <div class="bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-[600px]">
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg overflow-hidden flex flex-col h-[600px] transition-colors duration-300">
           
           <!-- Messages Area -->
           <div #messagesContainer class="flex-1 overflow-y-auto p-6 space-y-4">
             
             <!-- Empty State -->
-            <div *ngIf="messages.length === 0" class="text-center text-gray-400 mt-20">
+            <div *ngIf="messages.length === 0" class="text-center text-gray-400 dark:text-gray-500 mt-20">
               <lucide-icon [img]="Mail" class="w-16 h-16 mx-auto mb-4 opacity-50"></lucide-icon>
               <p class="text-lg">Start composing your email</p>
               <p class="text-sm mt-2">Describe what you need or select a template</p>
@@ -196,8 +211,8 @@
                  [class]="message.type === 'user' ? 'flex justify-end' : 'flex justify-start'">
               <div [class]="message.type === 'user' 
                    ? 'bg-blue-600 text-white' 
-                   : 'bg-gray-100 text-gray-800'"
-                   class="max-w-[85%] rounded-2xl p-4">
+                   : 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200'"
+                   class="max-w-[85%] rounded-2xl p-4 transition-colors duration-300">
                 
                 <!-- User message metadata -->
                 <div *ngIf="message.type === 'user'" class="text-xs opacity-75 mb-2">
@@ -210,7 +225,7 @@
                 <!-- Copy button for AI messages -->
                 <button *ngIf="message.type === 'ai'"
                         (click)="copyToClipboard(message.content)"
-                        class="mt-3 flex items-center gap-2 text-sm text-blue-600 hover:text-blue-700">
+                        class="mt-3 flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
                   <lucide-icon [img]="Copy" class="w-4 h-4"></lucide-icon>
                   Copy to clipboard
                 </button>
@@ -219,11 +234,11 @@
 
             <!-- Loading indicator -->
             <div *ngIf="isGenerating" class="flex justify-start">
-              <div class="bg-gray-100 rounded-2xl p-4">
+              <div class="bg-gray-100 dark:bg-gray-700 rounded-2xl p-4 transition-colors duration-300">
                 <div class="flex gap-2">
-                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
-                  <div class="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce"></div>
+                  <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+                  <div class="w-2 h-2 bg-gray-400 dark:bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
                 </div>
               </div>
             </div>
@@ -231,7 +246,7 @@
           </div>
 
           <!-- Input Area -->
-          <div class="border-t border-gray-200 p-4">
+          <div class="border-t border-gray-200 dark:border-gray-700 p-4 transition-colors duration-300">
             <div class="flex gap-3">
               <input
                 type="text"
@@ -239,12 +254,12 @@
                 (keypress)="onKeyPress($event)"
                 [disabled]="isGenerating"
                 placeholder="Describe your email need..."
-                class="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed" />
+                class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300" />
               
               <button
                 (click)="onSend()"
                 [disabled]="!inputText.trim() || isGenerating || !(isAuthenticated$ | async)"
-                class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
+                class="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:bg-gray-300 dark:disabled:bg-gray-700 disabled:cursor-not-allowed transition-colors flex items-center gap-2">
                 <lucide-icon [img]="Send" class="w-5 h-5"></lucide-icon>
               </button>
 

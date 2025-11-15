@@ -4,9 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
-  Edit3, LogIn, LogOut
+  Edit3, LogIn, LogOut, Moon, Sun
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
+import { ThemeService } from './services/theme.service';
 import { 
   Message, Tone, Audience, Template, 
   EmailRequest, EmailResponse
@@ -39,6 +40,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly Edit3 = Edit3;
   readonly LogIn = LogIn;
   readonly LogOut = LogOut;
+  readonly Moon = Moon;
+  readonly Sun = Sun;
 
   // Auth observables
   get isAuthenticated$() {
@@ -46,6 +49,11 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
   get user$() {
     return this.auth.user$;
+  }
+
+  // Theme observable
+  get theme$() {
+    return this.themeService.theme$;
   }
 
   // Component state
@@ -72,6 +80,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   constructor(
     private emailService: EmailService,
+    private themeService: ThemeService,
     public auth: AuthService
   ) {}
 
@@ -115,6 +124,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
         returnTo: window.location.origin
       }
     });
+  }
+
+  toggleTheme(): void {
+    this.themeService.toggleTheme();
   }
 
   ngAfterViewChecked(): void {

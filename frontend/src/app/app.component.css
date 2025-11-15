@@ -1,4 +1,4 @@
-/* Custom scrollbar styling */
+/* Custom scrollbar styling - Light Mode */
 ::-webkit-scrollbar {
   width: 8px;
 }
@@ -15,6 +15,19 @@
 
 ::-webkit-scrollbar-thumb:hover {
   background: #94a3b8;
+}
+
+/* Custom scrollbar styling - Dark Mode */
+.dark ::-webkit-scrollbar-track {
+  background: #374151;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: #4b5563;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background: #6b7280;
 }
 
 /* Animation for loading dots */
