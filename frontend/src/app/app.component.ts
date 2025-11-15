@@ -97,6 +97,31 @@ export class AppComponent implements OnInit, AfterViewChecked {
   manualEmailTone: string = '';
   manualEmailAudience: string = '';
 
+  // Add/Edit state for tones, audiences, templates
+  showAddTone: boolean = false;
+  newToneLabel: string = '';
+  newToneDescription: string = '';
+  
+  showAddAudience: boolean = false;
+  newAudienceLabel: string = '';
+  newAudienceDescription: string = '';
+  
+  showAddTemplate: boolean = false;
+  newTemplateName: string = '';
+  newTemplatePrompt: string = '';
+  
+  editingToneId: string | null = null;
+  editingToneLabel: string = '';
+  editingToneDescription: string = '';
+  
+  editingAudienceId: string | null = null;
+  editingAudienceLabel: string = '';
+  editingAudienceDescription: string = '';
+  
+  editingTemplateId: string | null = null;
+  editingTemplateName: string = '';
+  editingTemplatePrompt: string = '';
+
   // Data
   tones: Tone[] = [];
   audiences: Audience[] = [];
@@ -642,6 +667,245 @@ export class AppComponent implements OnInit, AfterViewChecked {
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
       this.errorMessage = 'Failed to save email to library';
+    }
+  }
+
+  // ==================== TONE MANAGEMENT ====================
+  
+  toggleAddTone(): void {
+    this.showAddTone = !this.showAddTone;
+    if (this.showAddTone) {
+      this.newToneLabel = '';
+      this.newToneDescription = '';
+    }
+  }
+
+  cancelAddTone(): void {
+    this.showAddTone = false;
+    this.newToneLabel = '';
+    this.newToneDescription = '';
+  }
+
+  canSaveNewTone(): boolean {
+    return this.newToneLabel.trim().length > 0;
+  }
+
+  async saveNewTone(): Promise<void> {
+    if (!this.accessToken || !this.canSaveNewTone()) return;
+
+    const newTone: Tone = {
+      id: `custom-${Date.now()}`,
+      label: this.newToneLabel.trim(),
+      color: 'bg-orange-500',
+      description: this.newToneDescription.trim() || 'Custom tone'
+    };
+
+    const success = await this.preferencesService.addTone(this.accessToken, newTone);
+    
+    if (success) {
+      this.cancelAddTone();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to add tone. Maximum 5 tones allowed.';
+    }
+  }
+
+  startEditingTone(tone: Tone): void {
+    this.editingToneId = tone.id;
+    this.editingToneLabel = tone.label;
+    this.editingToneDescription = tone.description || '';
+  }
+
+  cancelEditingTone(): void {
+    this.editingToneId = null;
+    this.editingToneLabel = '';
+    this.editingToneDescription = '';
+  }
+
+  async saveEditedTone(toneId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const updatedTones = this.tones.map(t => 
+      t.id === toneId 
+        ? { ...t, label: this.editingToneLabel.trim(), description: this.editingToneDescription.trim() }
+        : t
+    );
+
+    const success = await this.preferencesService.updateTones(this.accessToken, updatedTones);
+    
+    if (success) {
+      this.cancelEditingTone();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to update tone.';
+    }
+  }
+
+  // ==================== AUDIENCE MANAGEMENT ====================
+  
+  toggleAddAudience(): void {
+    this.showAddAudience = !this.showAddAudience;
+    if (this.showAddAudience) {
+      this.newAudienceLabel = '';
+      this.newAudienceDescription = '';
+    }
+  }
+
+  cancelAddAudience(): void {
+    this.showAddAudience = false;
+    this.newAudienceLabel = '';
+    this.newAudienceDescription = '';
+  }
+
+  canSaveNewAudience(): boolean {
+    return this.newAudienceLabel.trim().length > 0;
+  }
+
+  async saveNewAudience(): Promise<void> {
+    if (!this.accessToken || !this.canSaveNewAudience()) return;
+
+    const newAudience: Audience = {
+      id: `custom-${Date.now()}`,
+      label: this.newAudienceLabel.trim(),
+      icon: 'user',
+      description: this.newAudienceDescription.trim() || 'Custom audience'
+    };
+
+    const success = await this.preferencesService.updateAudiences(
+      this.accessToken, 
+      [...this.audiences, newAudience]
+    );
+    
+    if (success) {
+      this.cancelAddAudience();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to add audience. Maximum 4 audiences allowed.';
+    }
+  }
+
+  startEditingAudience(audience: Audience): void {
+    this.editingAudienceId = audience.id;
+    this.editingAudienceLabel = audience.label;
+    this.editingAudienceDescription = audience.description || '';
+  }
+
+  cancelEditingAudience(): void {
+    this.editingAudienceId = null;
+    this.editingAudienceLabel = '';
+    this.editingAudienceDescription = '';
+  }
+
+  async saveEditedAudience(audienceId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const updatedAudiences = this.audiences.map(a => 
+      a.id === audienceId 
+        ? { ...a, label: this.editingAudienceLabel.trim(), description: this.editingAudienceDescription.trim() }
+        : a
+    );
+
+    const success = await this.preferencesService.updateAudiences(this.accessToken, updatedAudiences);
+    
+    if (success) {
+      this.cancelEditingAudience();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to update audience.';
+    }
+  }
+
+  async deleteAudienceFromSettings(audienceId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const updatedAudiences = this.audiences.filter(a => a.id !== audienceId);
+
+    if (updatedAudiences.length < 4) {
+      this.errorMessage = 'Minimum 4 audiences required.';
+      return;
+    }
+
+    const success = await this.preferencesService.updateAudiences(this.accessToken, updatedAudiences);
+    
+    if (!success) {
+      this.errorMessage = 'Failed to delete audience.';
+    }
+  }
+
+  // ==================== TEMPLATE MANAGEMENT ====================
+  
+  toggleAddTemplate(): void {
+    this.showAddTemplate = !this.showAddTemplate;
+    if (this.showAddTemplate) {
+      this.newTemplateName = '';
+      this.newTemplatePrompt = '';
+    }
+  }
+
+  cancelAddTemplate(): void {
+    this.showAddTemplate = false;
+    this.newTemplateName = '';
+    this.newTemplatePrompt = '';
+  }
+
+  canSaveNewTemplate(): boolean {
+    return this.newTemplateName.trim().length > 0 && this.newTemplatePrompt.trim().length > 0;
+  }
+
+  async saveNewTemplate(): Promise<void> {
+    if (!this.accessToken || !this.canSaveNewTemplate()) return;
+
+    const newTemplate: Template = {
+      id: `custom-${Date.now()}`,
+      name: this.newTemplateName.trim(),
+      prompt: this.newTemplatePrompt.trim(),
+      isCustom: true
+    };
+
+    const success = await this.preferencesService.addTemplate(this.accessToken, newTemplate);
+    
+    if (success) {
+      this.cancelAddTemplate();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to add template. Maximum 6 templates allowed.';
+    }
+  }
+
+  startEditingTemplate(template: Template): void {
+    this.editingTemplateId = template.id;
+    this.editingTemplateName = template.name;
+    this.editingTemplatePrompt = template.prompt;
+  }
+
+  cancelEditingTemplate(): void {
+    this.editingTemplateId = null;
+    this.editingTemplateName = '';
+    this.editingTemplatePrompt = '';
+  }
+
+  async saveEditedTemplate(templateId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const updatedTemplates = this.templates.map(t => 
+      t.id === templateId 
+        ? { ...t, name: this.editingTemplateName.trim(), prompt: this.editingTemplatePrompt.trim() }
+        : t
+    );
+
+    const success = await this.preferencesService.updateTemplates(this.accessToken, updatedTemplates);
+    
+    if (success) {
+      this.cancelEditingTemplate();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to update template.';
     }
   }
 
