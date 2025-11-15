@@ -36,6 +36,7 @@ export interface Template {
   id: string;
   name: string;
   prompt: string;
+  isCustom?: boolean; // Added to identify custom templates
 }
 
 export interface Message {

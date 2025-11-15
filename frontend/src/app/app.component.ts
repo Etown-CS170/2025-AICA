@@ -64,8 +64,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
   selectedTemplate: string = '';
   customTone: string = '';
   customAudience: string = '';
+  customTemplate: string = '';
   isCustomTone: boolean = false;
   isCustomAudience: boolean = false;
+  isCustomTemplate: boolean = false;
   isGenerating: boolean = false;
   lastGeneratedEmail: string = '';
   errorMessage: string = '';
@@ -187,6 +189,13 @@ export class AppComponent implements OnInit, AfterViewChecked {
     if (this.isCustomAudience) this.customAudience = '';
   }
 
+  toggleCustomTemplate(): void {
+    this.isCustomTemplate = !this.isCustomTemplate;
+    if (this.isCustomTemplate) {
+      this.customTemplate = '';
+    }
+  }
+
   selectTone(toneId: string): void {
     this.selectedTone = toneId;
     this.isCustomTone = false;
@@ -237,11 +246,16 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     const tone = this.getCurrentTone();
     const audience = this.getCurrentAudience();
+    
+    // Use custom template if active, otherwise use input text
+    const promptText = this.isCustomTemplate && this.customTemplate.trim() 
+      ? this.customTemplate.trim() 
+      : this.inputText.trim();
 
     const userMessage: Message = {
       id: Date.now(),
       type: 'user',
-      content: this.inputText,
+      content: promptText,
       tone,
       audience,
       timestamp: new Date()
@@ -251,7 +265,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.shouldScrollToBottom = true;
 
     const request: EmailRequest = {
-      prompt: this.inputText,
+      prompt: promptText,
       tone,
       audience
     };
@@ -286,6 +300,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
   selectTemplate(template: Template): void {
     this.inputText = template.prompt;
     this.selectedTemplate = template.id;
+    this.isCustomTemplate = false;
+    this.customTemplate = '';
   }
 
   copyToClipboard(content: string): void {
@@ -302,8 +318,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.errorMessage = '';
     this.isCustomTone = false;
     this.isCustomAudience = false;
+    this.isCustomTemplate = false;
     this.customTone = '';
     this.customAudience = '';
+    this.customTemplate = '';
     this.selectedTone = '';
     this.selectedAudience = '';
     this.selectedTemplate = '';
