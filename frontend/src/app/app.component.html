@@ -249,11 +249,15 @@
           <div class="border-t border-gray-200 dark:border-gray-700 p-4 transition-colors duration-300">
             <!-- Current Selection Tags -->
             <div class="flex gap-2 mb-3">
-              <div class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium">
+              <!-- Tone Badge - Only show if tone is selected -->
+              <div *ngIf="getCurrentTone()" 
+                   class="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-lg text-xs font-medium">
                 <div class="w-1.5 h-1.5 bg-blue-500 rounded-full"></div>
                 <span>{{ getCurrentTone() }}</span>
               </div>
-              <div class="flex items-center gap-2 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-medium">
+              <!-- Audience Badge - Only show if audience is selected -->
+              <div *ngIf="getCurrentAudience()" 
+                   class="flex items-center gap-2 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-medium">
                 <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
                 <span>{{ getCurrentAudience() }}</span>
               </div>

@@ -59,8 +59,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
   // Component state
   messages: Message[] = [];
   inputText: string = '';
-  selectedTone: string = 'professional';
-  selectedAudience: string = 'professor';
+  selectedTone: string = '';
+  selectedAudience: string = '';
   selectedTemplate: string = '';
   customTone: string = '';
   customAudience: string = '';
