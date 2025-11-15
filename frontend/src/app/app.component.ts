@@ -192,7 +192,20 @@ export class AppComponent implements OnInit, AfterViewChecked {
   toggleCustomTemplate(): void {
     this.isCustomTemplate = !this.isCustomTemplate;
     if (this.isCustomTemplate) {
+      // When enabling custom mode, copy input to custom template
+      this.customTemplate = this.inputText;
+      this.selectedTemplate = '';
+    } else {
+      // When disabling custom mode, copy custom template back to input
+      this.inputText = this.customTemplate;
       this.customTemplate = '';
+    }
+  }
+
+  // Watch for custom template changes and sync to input
+  onCustomTemplateChange(): void {
+    if (this.isCustomTemplate) {
+      this.inputText = this.customTemplate;
     }
   }
 
@@ -241,16 +254,29 @@ export class AppComponent implements OnInit, AfterViewChecked {
       : this.selectedAudience;
   }
 
+  // NEW: Helper to get the current prompt text
+  getCurrentPrompt(): string {
+    // If custom template is active and has content, use it
+    if (this.isCustomTemplate && this.customTemplate.trim()) {
+      return this.customTemplate.trim();
+    }
+    // Otherwise use the main input text
+    return this.inputText.trim();
+  }
+
+  // NEW: Check if send button should be enabled
+  canSend(): boolean {
+    const hasPrompt = this.getCurrentPrompt().length > 0;
+    return hasPrompt && !this.isGenerating;
+  }
+
   async onSend(): Promise<void> {
-    if (!this.inputText.trim() || this.isGenerating) return;
+    const promptText = this.getCurrentPrompt();
+    
+    if (!promptText || this.isGenerating) return;
 
     const tone = this.getCurrentTone();
     const audience = this.getCurrentAudience();
-    
-    // Use custom template if active, otherwise use input text
-    const promptText = this.isCustomTemplate && this.customTemplate.trim() 
-      ? this.customTemplate.trim() 
-      : this.inputText.trim();
 
     const userMessage: Message = {
       id: Date.now(),
@@ -270,7 +296,9 @@ export class AppComponent implements OnInit, AfterViewChecked {
       audience
     };
 
+    // Clear both inputs after sending
     this.inputText = '';
+    this.customTemplate = '';
     this.errorMessage = '';
     this.isGenerating = true;
 
@@ -298,10 +326,19 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
 
   selectTemplate(template: Template): void {
-    this.inputText = template.prompt;
-    this.selectedTemplate = template.id;
-    this.isCustomTemplate = false;
-    this.customTemplate = '';
+    // Toggle behavior - if already selected, unselect it
+    if (this.selectedTemplate === template.id) {
+      this.selectedTemplate = '';
+      this.inputText = '';
+      this.isCustomTemplate = false;
+      this.customTemplate = '';
+    } else {
+      // Select the template
+      this.inputText = template.prompt;
+      this.selectedTemplate = template.id;
+      this.isCustomTemplate = false;
+      this.customTemplate = '';
+    }
   }
 
   copyToClipboard(content: string): void {
