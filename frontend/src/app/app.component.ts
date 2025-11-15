@@ -199,6 +199,27 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.customAudience = '';
   }
 
+  // New toggle methods that allow unselecting
+  toggleTone(toneId: string): void {
+    if (this.selectedTone === toneId) {
+      this.selectedTone = '';
+    } else {
+      this.selectedTone = toneId;
+    }
+    this.isCustomTone = false;
+    this.customTone = '';
+  }
+
+  toggleAudience(audienceId: string): void {
+    if (this.selectedAudience === audienceId) {
+      this.selectedAudience = '';
+    } else {
+      this.selectedAudience = audienceId;
+    }
+    this.isCustomAudience = false;
+    this.customAudience = '';
+  }
+
   getCurrentTone(): string {
     return this.isCustomTone && this.customTone.trim()
       ? this.customTone.trim()
@@ -283,8 +304,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.isCustomAudience = false;
     this.customTone = '';
     this.customAudience = '';
-    this.selectedTone = 'professional';
-    this.selectedAudience = 'professor';
+    this.selectedTone = '';
+    this.selectedAudience = '';
     this.selectedTemplate = '';
   }
 
