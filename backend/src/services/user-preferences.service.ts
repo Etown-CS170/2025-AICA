@@ -157,7 +157,7 @@ class UserPreferencesService {
 
   // ==================== SAVED EMAILS ====================
   
-  async saveEmail(userId: string, email: Omit<ISavedEmail, 'id' | 'timestamp'>): Promise<IUserPreferences | null> {
+async saveEmail(userId: string, email: Omit<ISavedEmail, 'id' | 'timestamp'>): Promise<IUserPreferences | null> {
     const prefs = await this.getUserPreferences(userId);
     
     const newEmail: ISavedEmail = {
@@ -167,6 +167,25 @@ class UserPreferencesService {
     };
 
     prefs.savedEmails.push(newEmail);
+    return await prefs.save();
+  }
+
+  async updateEmail(userId: string, emailId: string, updates: Partial<ISavedEmail>): Promise<IUserPreferences | null> {
+    const prefs = await this.getUserPreferences(userId);
+    const emailIndex = prefs.savedEmails.findIndex(e => e.id === emailId);
+    
+    if (emailIndex === -1) {
+      throw new Error('Email not found');
+    }
+
+    // Update only the provided fields
+    if (updates.subject !== undefined) prefs.savedEmails[emailIndex].subject = updates.subject;
+    if (updates.content !== undefined) prefs.savedEmails[emailIndex].content = updates.content;
+    if (updates.tone !== undefined) prefs.savedEmails[emailIndex].tone = updates.tone;
+    if (updates.audience !== undefined) prefs.savedEmails[emailIndex].audience = updates.audience;
+    if (updates.source !== undefined) prefs.savedEmails[emailIndex].source = updates.source;
+    if (updates.isFavorite !== undefined) prefs.savedEmails[emailIndex].isFavorite = updates.isFavorite;
+
     return await prefs.save();
   }
 

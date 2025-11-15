@@ -209,6 +209,28 @@ class PreferencesController {
   }
 
   /**
+   * Update an email
+   * PUT /api/preferences/emails/:id
+   */
+  async updateEmail(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const { id } = req.params;
+      const updates = req.body;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const updated = await userPreferencesService.updateEmail(userId, id, updates);
+      res.status(200).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  /**
    * Delete an email
    * DELETE /api/preferences/emails/:id
    */

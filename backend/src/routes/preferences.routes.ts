@@ -26,6 +26,7 @@ router.delete('/templates/:id', (req, res) => preferencesController.deleteTempla
 
 // Saved Emails
 router.post('/emails', (req, res) => preferencesController.saveEmail(req, res));
+router.put('/emails/:id', (req, res) => preferencesController.updateEmail(req, res));
 router.delete('/emails/:id', (req, res) => preferencesController.deleteEmail(req, res));
 router.patch('/emails/:id/favorite', (req, res) => preferencesController.toggleEmailFavorite(req, res));
 

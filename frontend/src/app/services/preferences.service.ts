@@ -28,6 +28,7 @@ export interface UserPreferences {
 @Injectable({
   providedIn: 'root'
 })
+
 export class PreferencesService {
   private apiUrl = environment.apiUrl;
   
@@ -308,6 +309,32 @@ export class PreferencesService {
       return false;
     } catch (error) {
       console.error('Failed to save email:', error);
+      return false;
+    }
+  }
+
+  async updateEmail(token: string, emailId: string, updatedEmail: Partial<SavedEmail>): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.put<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/emails/${emailId}`,
+          updatedEmail,
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.savedEmailsSubject.next(response.data.savedEmails);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to update email:', error);
       return false;
     }
   }

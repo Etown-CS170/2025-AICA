@@ -14,6 +14,15 @@
         
         <!-- Auth & Theme Section -->
         <div class="flex items-center gap-3">
+          <!-- Settings Button (only show when authenticated) -->
+          <button 
+            *ngIf="(isAuthenticated$ | async)"
+            (click)="toggleSettingsModal()"
+            class="p-2 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+            title="Settings">
+            <lucide-icon [img]="Settings" class="w-5 h-5 text-gray-700 dark:text-gray-300"></lucide-icon>
+          </button>
+
           <!-- Theme Toggle Button -->
           <button 
             (click)="toggleTheme()"
@@ -85,7 +94,7 @@
       <p class="font-medium">Copied to clipboard!</p>
     </div>
 
-    <!-- NEW: Save Success Message -->
+    <!-- Save Success Message -->
     <div *ngIf="showSaveSuccess" class="bg-green-50 dark:bg-green-900/30 border border-green-200 dark:border-green-700 text-green-700 dark:text-green-300 px-4 py-3 rounded-lg mb-6 flex items-center gap-2 transition-colors duration-300">
       <lucide-icon [img]="Save" class="w-5 h-5"></lucide-icon>
       <p class="font-medium">Saved to database!</p>
@@ -120,6 +129,13 @@
               placeholder="e.g., Casual, Urgent, Apologetic..."
               class="w-full px-3 py-2 border border-orange-300 dark:border-orange-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
             />
+            <button
+              *ngIf="customTone.trim() && (isAuthenticated$ | async)"
+              (click)="saveCustomTone()"
+              class="mt-2 w-full px-3 py-2 text-sm bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors">
+              <lucide-icon [img]="Save" class="w-4 h-4 inline mr-2"></lucide-icon>
+              Save Tone
+            </button>
           </div>
           
           <!-- Default Tone Buttons -->
@@ -156,10 +172,17 @@
           <div *ngIf="isCustomAudience" class="mb-3">
             <textarea
               [(ngModel)]="customAudience"
-              placeholder="e.g., CEO, Client, Team Member&#10;&#10;For multiple recipients:&#10;CEO and CFO&#10;Marketing Team&#10;Professor and Academic Advisor"
-              rows="4"
+              placeholder="e.g., CEO, Client, Team Member"
+              rows="2"
               class="w-full px-3 py-2 border border-purple-300 dark:border-purple-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
             ></textarea>
+            <button
+              *ngIf="customAudience.trim() && (isAuthenticated$ | async)"
+              (click)="saveCustomAudience()"
+              class="mt-2 w-full px-3 py-2 text-sm bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors">
+              <lucide-icon [img]="Save" class="w-4 h-4 inline mr-2"></lucide-icon>
+              Save Audience
+            </button>
           </div>
           
           <!-- Default Audience Buttons -->
@@ -195,6 +218,12 @@
 
           <!-- Custom Template Input -->
           <div *ngIf="isCustomTemplate" class="mb-3">
+            <input
+              type="text"
+              [(ngModel)]="customTemplateName"
+              placeholder="Template name..."
+              class="w-full px-3 py-2 mb-2 border border-green-300 dark:border-green-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
+            />
             <textarea
               [(ngModel)]="customTemplate"
               (ngModelChange)="onCustomTemplateChange()"
@@ -203,6 +232,13 @@
               rows="3"
               class="w-full px-3 py-2 border border-green-300 dark:border-green-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 text-sm resize-none bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
             ></textarea>
+            <button
+              *ngIf="customTemplate.trim() && customTemplateName.trim() && (isAuthenticated$ | async)"
+              (click)="saveCustomTemplate()"
+              class="mt-2 w-full px-3 py-2 text-sm bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+              <lucide-icon [img]="Save" class="w-4 h-4 inline mr-2"></lucide-icon>
+              Save Template
+            </button>
           </div>
 
           <!-- Default Template Buttons -->
@@ -265,16 +301,16 @@
                     (click)="copyToClipboard(message.content)"
                     class="flex items-center gap-2 px-3 py-2 text-sm border border-blue-300 dark:border-blue-600 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
                     <lucide-icon [img]="Copy" class="w-4 h-4"></lucide-icon>
-                    Copy to clipboard
+                    Copy
                   </button>
 
-                  <!-- Save to Library button (only show when authenticated) -->
+                  <!-- Save to Library button -->
                   <button 
                     *ngIf="(isAuthenticated$ | async)"
                     (click)="saveEmailToLibrary(message.content)"
                     class="flex items-center gap-2 px-3 py-2 text-sm border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
                     <lucide-icon [img]="Save" class="w-4 h-4"></lucide-icon>
-                    Save to Library
+                    Save
                   </button>
                 </div>
               </div>
@@ -297,13 +333,11 @@
           <div class="border-t border-gray-200 dark:border-gray-700 p-4 transition-colors duration-300">
             <!-- Current Selection Tags -->
             <div class="flex gap-2 mb-3">
-              <!-- Tone Badge - Only show if tone is selected -->
               <div *ngIf="getCurrentTone()" 
                    class="flex items-center gap-2 px-3 py-1.5 bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded-lg text-xs font-medium">
                 <div class="w-1.5 h-1.5 bg-orange-500 rounded-full"></div>
                 <span>{{ getCurrentTone() }}</span>
               </div>
-              <!-- Audience Badge - Only show if audience is selected -->
               <div *ngIf="getCurrentAudience()" 
                    class="flex items-center gap-2 px-3 py-1.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-lg text-xs font-medium">
                 <div class="w-1.5 h-1.5 bg-purple-500 rounded-full"></div>
@@ -340,6 +374,261 @@
         </div>
       </div>
 
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div *ngIf="showSettingsModal" 
+       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+       (click)="closeSettingsModal($event)">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+         (click)="$event.stopPropagation()">
+      
+      <!-- Modal Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <lucide-icon [img]="Settings" class="w-6 h-6 text-blue-600 dark:text-blue-400"></lucide-icon>
+          <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Preferences</h2>
+        </div>
+        <button 
+          (click)="toggleSettingsModal()"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <lucide-icon [img]="X" class="w-6 h-6 text-gray-600 dark:text-gray-400"></lucide-icon>
+        </button>
+      </div>
+
+      <!-- Modal Content -->
+      <div class="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
+        
+        <!-- Saved Tones Section -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <div class="w-3 h-3 bg-orange-500 rounded-full"></div>
+            My Tones
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div *ngFor="let tone of tones" 
+                 class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="flex items-center gap-3">
+                <div [class]="tone.color" class="w-3 h-3 rounded-full"></div>
+                <div>
+                  <p class="font-medium text-gray-800 dark:text-white">{{ tone.label }}</p>
+                  <p *ngIf="tone.description" class="text-xs text-gray-500 dark:text-gray-400">{{ tone.description }}</p>
+                </div>
+              </div>
+              <button 
+                *ngIf="tones.length > 4"
+                (click)="deleteToneFromSettings(tone.id)"
+                class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                <lucide-icon [img]="Trash2" class="w-4 h-4"></lucide-icon>
+              </button>
+            </div>
+          </div>
+          <p *ngIf="tones.length >= 5" class="text-sm text-orange-600 dark:text-orange-400 mt-2">
+            Maximum 5 tones reached. Delete one to add more.
+          </p>
+        </div>
+
+        <!-- Saved Audiences Section -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+            My Audiences
+          </h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div *ngFor="let audience of audiences" 
+                 class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="flex items-center gap-3">
+                <lucide-icon [img]="getAudienceIcon(audience.id)" class="w-5 h-5 text-purple-600 dark:text-purple-400"></lucide-icon>
+                <div>
+                  <p class="font-medium text-gray-800 dark:text-white">{{ audience.label }}</p>
+                  <p *ngIf="audience.description" class="text-xs text-gray-500 dark:text-gray-400">{{ audience.description }}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p *ngIf="audiences.length >= 4" class="text-sm text-purple-600 dark:text-purple-400 mt-2">
+            Maximum 4 audiences reached.
+          </p>
+        </div>
+
+        <!-- Saved Templates Section -->
+        <div class="mb-8">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+            My Templates
+          </h3>
+          <div class="grid grid-cols-1 gap-3">
+            <div *ngFor="let template of templates" 
+                 class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              <div class="flex-1">
+                <p class="font-medium text-gray-800 dark:text-white">{{ template.name }}</p>
+                <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">{{ template.prompt }}</p>
+                <span *ngIf="template.isCustom" 
+                      class="inline-block mt-2 px-2 py-1 text-xs bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded">
+                  Custom
+                </span>
+              </div>
+              <button 
+                *ngIf="template.isCustom && templates.length > 6"
+                (click)="deleteTemplateFromSettings(template.id)"
+                class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                <lucide-icon [img]="Trash2" class="w-4 h-4"></lucide-icon>
+              </button>
+            </div>
+          </div>
+          <p *ngIf="templates.length >= 6" class="text-sm text-green-600 dark:text-green-400 mt-2">
+            Maximum 6 templates reached. Delete one to add more.
+          </p>
+        </div>
+
+        <!-- Saved Emails Section -->
+        <div class="mb-4">
+          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
+            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+            Saved Emails Library
+          </h3>
+          <div *ngIf="(preferencesService.savedEmails$ | async)?.length === 0" 
+               class="text-center py-8 text-gray-500 dark:text-gray-400">
+            <lucide-icon [img]="Mail" class="w-12 h-12 mx-auto mb-2 opacity-50"></lucide-icon>
+            <p>No saved emails yet</p>
+            <p class="text-sm mt-1">Click "Save" on generated emails to add them here</p>
+          </div>
+          <div class="space-y-3">
+            <div *ngFor="let email of (preferencesService.savedEmails$ | async)" 
+                 class="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+              
+              <!-- View Mode -->
+              <div *ngIf="editingEmailId !== email.id">
+                <div class="flex items-start justify-between mb-2">
+                  <div class="flex-1">
+                    <div class="flex items-center gap-2 mb-1">
+                      <p class="font-medium text-gray-800 dark:text-white">{{ email.subject }}</p>
+                      <button 
+                        (click)="toggleFavorite(email.id)"
+                        class="p-1 hover:bg-gray-200 dark:hover:bg-gray-600 rounded transition-colors">
+                        <lucide-icon 
+                          [img]="Star" 
+                          [class]="email.isFavorite ? 'text-yellow-500 fill-yellow-500' : 'text-gray-400'"
+                          class="w-4 h-4"></lucide-icon>
+                      </button>
+                    </div>
+                    <div class="flex gap-2 mb-2">
+                      <span class="px-2 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 rounded">
+                        {{ email.tone }}
+                      </span>
+                      <span class="px-2 py-1 text-xs bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded">
+                        {{ email.audience }}
+                      </span>
+                      <span class="px-2 py-1 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded">
+                        {{ email.timestamp | date:'short' }}
+                      </span>
+                    </div>
+                    <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">{{ email.content }}</p>
+                  </div>
+                  <div class="flex gap-2 ml-4">
+                    <button 
+                      (click)="startEditingEmail(email)"
+                      class="p-2 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors"
+                      title="Edit">
+                      <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
+                    </button>
+                    <button 
+                      (click)="copyToClipboard(email.content)"
+                      class="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                      title="Copy">
+                      <lucide-icon [img]="Copy" class="w-4 h-4"></lucide-icon>
+                    </button>
+                    <button 
+                      (click)="deleteEmailFromLibrary(email.id)"
+                      class="p-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                      title="Delete">
+                      <lucide-icon [img]="Trash2" class="w-4 h-4"></lucide-icon>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Edit Mode -->
+              <div *ngIf="editingEmailId === email.id" class="space-y-3">
+                <!-- Subject Input -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+                  <input
+                    type="text"
+                    [(ngModel)]="editingEmailSubject"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                    placeholder="Email subject"
+                  />
+                </div>
+
+                <!-- Content Textarea -->
+                <div>
+                  <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
+                  <textarea
+                    [(ngModel)]="editingEmailContent"
+                    rows="10"
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white font-mono text-sm resize-none"
+                    placeholder="Email content"
+                  ></textarea>
+                </div>
+
+                <!-- Tone and Audience -->
+                <div class="grid grid-cols-2 gap-3">
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tone</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="editingEmailTone"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                      placeholder="Tone"
+                    />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Audience</label>
+                    <input
+                      type="text"
+                      [(ngModel)]="editingEmailAudience"
+                      class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                      placeholder="Audience"
+                    />
+                  </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex gap-2 justify-end">
+                  <button 
+                    (click)="cancelEditingEmail()"
+                    class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors">
+                    Cancel
+                  </button>
+                  <button 
+                    (click)="saveEditedEmail(email.id)"
+                    class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors flex items-center gap-2">
+                    <lucide-icon [img]="Save" class="w-4 h-4"></lucide-icon>
+                    Save Changes
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="flex items-center justify-between p-6 border-t border-gray-200 dark:border-gray-700">
+        <button 
+          (click)="resetPreferencesToDefaults()"
+          class="px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+          Reset to Defaults
+        </button>
+        <button 
+          (click)="toggleSettingsModal()"
+          class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+          Done
+        </button>
+      </div>
     </div>
   </div>
 </div>
