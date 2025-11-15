@@ -3,15 +3,10 @@ dotenv.config();
 
 import express, { Application, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
-import { connectDatabase } from './config/database.config';
 import emailRoutes from './routes/email.routes';
-import preferencesRoutes from './routes/preferences.routes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
-
-// Connect to MongoDB
-connectDatabase();
 
 // Middleware
 app.use(cors({
@@ -21,23 +16,21 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logging middleware (optional)
+// Logging middleware (optional — comment out for production)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  // console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 
 // Routes
 app.use('/api/email', emailRoutes);
-app.use('/api/preferences', preferencesRoutes); // NEW
 
 // Health check (public)
 app.get('/api/health', (req: Request, res: Response) => {
   res.json({
     status: 'ok',
     timestamp: new Date().toISOString(),
-    environment: process.env.NODE_ENV || 'development',
-    database: 'connected' // You can add actual DB health check here
+    environment: process.env.NODE_ENV || 'development'
   });
 });
 
@@ -56,7 +49,7 @@ interface ExpressError extends Error {
 
 // Global error handler
 app.use((err: ExpressError, req: Request, res: Response, next: NextFunction) => {
-  console.error('❌ An unexpected error occurred', err);
+  // console.error('❌ An unexpected error occurred', err);
 
   if (err.name === 'UnauthorizedError') {
     return res.status(401).json({
@@ -73,6 +66,6 @@ app.use((err: ExpressError, req: Request, res: Response, next: NextFunction) => 
 
 // Start server
 app.listen(PORT, () => {
-  console.log(`🚀 AICA Backend Server running on port ${PORT}`);
-  console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
+  // console.log(`🚀 AICA Backend Server running on port ${PORT}`);
+  // console.log(`📧 Environment: ${process.env.NODE_ENV || 'development'}`);
 });
