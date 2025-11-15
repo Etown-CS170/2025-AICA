@@ -398,7 +398,7 @@
       </div>
 
       <!-- Modal Content -->
-      <div class="overflow-y-auto max-h-[calc(90vh-140px)] p-6">
+      <div class="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
         
         <!-- Saved Tones Section -->
         <div class="mb-8">
@@ -482,17 +482,85 @@
           </p>
         </div>
 
-        <!-- Saved Emails Section -->
+<!-- Saved Emails Section -->
         <div class="mb-4">
-          <h3 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center gap-2">
-            <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
-            Email Templates Library
-          </h3>
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+              <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+              Email Templates Library
+            </h3>
+            <button
+              (click)="toggleManualEmailAdd()"
+              class="flex items-center gap-2 px-3 py-2 text-sm bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors">
+              <lucide-icon [img]="Plus" class="w-4 h-4"></lucide-icon>
+              Add Email
+            </button>
+          </div>
+
+          <!-- Manual Email Add Form -->
+          <div *ngIf="showManualEmailAdd" class="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg space-y-3">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Subject</label>
+              <input
+                type="text"
+                [(ngModel)]="manualEmailSubject"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                placeholder="Email subject"
+              />
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Content</label>
+              <textarea
+                [(ngModel)]="manualEmailContent"
+                rows="8"
+                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white font-mono text-sm resize-none"
+                placeholder="Email content"
+              ></textarea>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tone</label>
+                <input
+                  type="text"
+                  [(ngModel)]="manualEmailTone"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                  placeholder="e.g., Professional"
+                />
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Audience</label>
+                <input
+                  type="text"
+                  [(ngModel)]="manualEmailAudience"
+                  class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 bg-white dark:bg-gray-600 text-gray-900 dark:text-white"
+                  placeholder="e.g., Professor"
+                />
+              </div>
+            </div>
+
+            <div class="flex gap-2 justify-end">
+              <button 
+                (click)="cancelManualEmailAdd()"
+                class="px-4 py-2 text-sm text-gray-700 dark:text-gray-300 bg-gray-200 dark:bg-gray-600 hover:bg-gray-300 dark:hover:bg-gray-500 rounded-lg transition-colors">
+                Cancel
+              </button>
+              <button 
+                (click)="saveManualEmail()"
+                [disabled]="!canSaveManualEmail()"
+                class="px-4 py-2 text-sm text-white bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed rounded-lg transition-colors flex items-center gap-2">
+                <lucide-icon [img]="Save" class="w-4 h-4"></lucide-icon>
+                Save Email
+              </button>
+            </div>
+          </div>
+
           <div *ngIf="(preferencesService.savedEmails$ | async)?.length === 0" 
                class="text-center py-8 text-gray-500 dark:text-gray-400">
             <lucide-icon [img]="Mail" class="w-12 h-12 mx-auto mb-2 opacity-50"></lucide-icon>
             <p>No saved emails yet</p>
-            <p class="text-sm mt-1">Click "Save" on generated emails to add them here</p>
+            <p class="text-sm mt-1">Click "Save" on generated emails or "Add Email" to create one manually</p>
           </div>
           <div class="space-y-3">
             <div *ngFor="let email of (preferencesService.savedEmails$ | async)" 

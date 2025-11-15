@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
-  Edit3, LogIn, LogOut, Moon, Sun, Save, Settings, X, Trash2, Star
+  Edit3, LogIn, LogOut, Moon, Sun, Save, Settings, X, Trash2, Star, Plus
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
 import { PreferencesService } from './services/preferences.service';
@@ -48,6 +48,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly X = X;
   readonly Trash2 = Trash2;
   readonly Star = Star;
+  readonly Plus = Plus;
 
   // Auth observables
   get isAuthenticated$() {
@@ -88,6 +89,13 @@ export class AppComponent implements OnInit, AfterViewChecked {
   editingEmailContent: string = '';
   editingEmailTone: string = '';
   editingEmailAudience: string = '';
+
+  // Manual email add state
+  showManualEmailAdd: boolean = false;
+  manualEmailSubject: string = '';
+  manualEmailContent: string = '';
+  manualEmailTone: string = '';
+  manualEmailAudience: string = '';
 
   // Data
   tones: Tone[] = [];
@@ -554,7 +562,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
   async saveEditedEmail(emailId: string): Promise<void> {
     if (!this.accessToken) return;
 
-    // Update the email with new values
     const success = await this.preferencesService.updateEmail(this.accessToken, emailId, {
       subject: this.editingEmailSubject,
       content: this.editingEmailContent,
@@ -585,6 +592,56 @@ export class AppComponent implements OnInit, AfterViewChecked {
       } else {
         this.errorMessage = 'Failed to reset preferences.';
       }
+    }
+  }
+
+  // Toggle manual email add form
+  toggleManualEmailAdd(): void {
+    this.showManualEmailAdd = !this.showManualEmailAdd;
+    if (this.showManualEmailAdd) {
+      this.manualEmailSubject = '';
+      this.manualEmailContent = '';
+      this.manualEmailTone = '';
+      this.manualEmailAudience = '';
+    }
+  }
+
+  // Cancel manual email add
+  cancelManualEmailAdd(): void {
+    this.showManualEmailAdd = false;
+    this.manualEmailSubject = '';
+    this.manualEmailContent = '';
+    this.manualEmailTone = '';
+    this.manualEmailAudience = '';
+  }
+
+  // Check if manual email can be saved
+  canSaveManualEmail(): boolean {
+    return this.manualEmailSubject.trim().length > 0 &&
+           this.manualEmailContent.trim().length > 0 &&
+           this.manualEmailTone.trim().length > 0 &&
+           this.manualEmailAudience.trim().length > 0;
+  }
+
+  // Save manual email
+  async saveManualEmail(): Promise<void> {
+    if (!this.accessToken || !this.canSaveManualEmail()) return;
+
+    const success = await this.preferencesService.saveEmail(this.accessToken, {
+      subject: this.manualEmailSubject.trim(),
+      content: this.manualEmailContent.trim(),
+      tone: this.manualEmailTone.trim(),
+      audience: this.manualEmailAudience.trim(),
+      source: 'manual'
+    });
+
+    if (success) {
+      this.cancelManualEmailAdd();
+      this.showSaveSuccess = true;
+      this.errorMessage = '';
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save email to library';
     }
   }
 
