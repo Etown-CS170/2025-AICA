@@ -19,14 +19,14 @@ export type ToneType = 'professional' | 'friendly' | 'formal' | 'persuasive';
 export type AudienceType = 'professor' | 'student' | 'coach' | 'professional';
 
 export interface Tone {
-  id: ToneType;
+  id: string; // Changed from ToneType to string to allow custom IDs
   label: string;
   color: string;
   description?: string;
 }
 
 export interface Audience {
-  id: AudienceType;
+  id: string; // Changed from AudienceType to string to allow custom IDs
   label: string;
   icon: string;
   description?: string;

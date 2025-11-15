@@ -4,9 +4,10 @@ import { FormsModule } from '@angular/forms';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
-  Edit3, LogIn, LogOut, Moon, Sun
+  Edit3, LogIn, LogOut, Moon, Sun, Save, Settings, X, Trash2, Star
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
+import { PreferencesService } from './services/preferences.service';
 import { ThemeService } from './services/theme.service';
 import { 
   Message, Tone, Audience, Template, 
@@ -22,7 +23,7 @@ import { distinctUntilChanged } from 'rxjs/operators';
   imports: [CommonModule, FormsModule, LucideAngularModule],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  providers: [EmailService]
+  providers: [EmailService, PreferencesService]
 })
 export class AppComponent implements OnInit, AfterViewChecked {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
@@ -42,6 +43,11 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly LogOut = LogOut;
   readonly Moon = Moon;
   readonly Sun = Sun;
+  readonly Save = Save;
+  readonly Settings = Settings;
+  readonly X = X;
+  readonly Trash2 = Trash2;
+  readonly Star = Star;
 
   // Auth observables
   get isAuthenticated$() {
@@ -65,6 +71,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   customTone: string = '';
   customAudience: string = '';
   customTemplate: string = '';
+  customTemplateName: string = '';
   isCustomTone: boolean = false;
   isCustomAudience: boolean = false;
   isCustomTemplate: boolean = false;
@@ -72,6 +79,15 @@ export class AppComponent implements OnInit, AfterViewChecked {
   lastGeneratedEmail: string = '';
   errorMessage: string = '';
   showCopySuccess: boolean = false;
+  showSaveSuccess: boolean = false;
+  showSettingsModal: boolean = false;
+
+  // Email editing state
+  editingEmailId: string | null = null;
+  editingEmailSubject: string = '';
+  editingEmailContent: string = '';
+  editingEmailTone: string = '';
+  editingEmailAudience: string = '';
 
   // Data
   tones: Tone[] = [];
@@ -82,6 +98,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   constructor(
     private emailService: EmailService,
+    public preferencesService: PreferencesService,
     private themeService: ThemeService,
     public auth: AuthService
   ) {}
@@ -92,7 +109,26 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.loadTemplates();
     this.checkApiHealth();
 
-    // Fetch token only when authenticated state changes and accessToken is null
+    // Subscribe to preferences from MongoDB
+    this.preferencesService.tones$.subscribe(tones => {
+      if (tones.length > 0) {
+        this.tones = tones;
+      }
+    });
+
+    this.preferencesService.audiences$.subscribe(audiences => {
+      if (audiences.length > 0) {
+        this.audiences = audiences;
+      }
+    });
+
+    this.preferencesService.templates$.subscribe(templates => {
+      if (templates.length > 0) {
+        this.templates = templates;
+      }
+    });
+
+    // Fetch token and load preferences when authenticated
     this.auth.isAuthenticated$.pipe(distinctUntilChanged()).subscribe(isAuth => {
       if (isAuth && !this.accessToken) {
         this.auth.getAccessTokenSilently({
@@ -100,11 +136,15 @@ export class AppComponent implements OnInit, AfterViewChecked {
             audience: 'https://aica-backend-api'
           }
         }).subscribe({
-          next: (token) => {
+          next: async (token) => {
             this.accessToken = token;
+            const success = await this.preferencesService.loadUserPreferences(token);
+            if (!success) {
+              console.log('⚠️ Failed to load preferences, using defaults');
+            }
           },
-          error: () => {
-            // Suppress specific token retrieval errors
+          error: (err) => {
+            console.error('❌ Token error:', err);
           }
         });
       }
@@ -130,6 +170,16 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  toggleSettingsModal(): void {
+    this.showSettingsModal = !this.showSettingsModal;
+  }
+
+  closeSettingsModal(event: MouseEvent): void {
+    if (event.target === event.currentTarget) {
+      this.showSettingsModal = false;
+    }
   }
 
   ngAfterViewChecked(): void {
@@ -192,17 +242,16 @@ export class AppComponent implements OnInit, AfterViewChecked {
   toggleCustomTemplate(): void {
     this.isCustomTemplate = !this.isCustomTemplate;
     if (this.isCustomTemplate) {
-      // When enabling custom mode, copy input to custom template
       this.customTemplate = this.inputText;
+      this.customTemplateName = '';
       this.selectedTemplate = '';
     } else {
-      // When disabling custom mode, copy custom template back to input
       this.inputText = this.customTemplate;
       this.customTemplate = '';
+      this.customTemplateName = '';
     }
   }
 
-  // Watch for custom template changes and sync to input
   onCustomTemplateChange(): void {
     if (this.isCustomTemplate) {
       this.inputText = this.customTemplate;
@@ -221,7 +270,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.customAudience = '';
   }
 
-  // New toggle methods that allow unselecting
   toggleTone(toneId: string): void {
     if (this.selectedTone === toneId) {
       this.selectedTone = '';
@@ -254,17 +302,13 @@ export class AppComponent implements OnInit, AfterViewChecked {
       : this.selectedAudience;
   }
 
-  // NEW: Helper to get the current prompt text
   getCurrentPrompt(): string {
-    // If custom template is active and has content, use it
     if (this.isCustomTemplate && this.customTemplate.trim()) {
       return this.customTemplate.trim();
     }
-    // Otherwise use the main input text
     return this.inputText.trim();
   }
 
-  // NEW: Check if send button should be enabled
   canSend(): boolean {
     const hasPrompt = this.getCurrentPrompt().length > 0;
     return hasPrompt && !this.isGenerating;
@@ -296,7 +340,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
       audience
     };
 
-    // Clear both inputs after sending
     this.inputText = '';
     this.customTemplate = '';
     this.errorMessage = '';
@@ -326,14 +369,12 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
 
   selectTemplate(template: Template): void {
-    // Toggle behavior - if already selected, unselect it
     if (this.selectedTemplate === template.id) {
       this.selectedTemplate = '';
       this.inputText = '';
       this.isCustomTemplate = false;
       this.customTemplate = '';
     } else {
-      // Select the template
       this.inputText = template.prompt;
       this.selectedTemplate = template.id;
       this.isCustomTemplate = false;
@@ -348,6 +389,205 @@ export class AppComponent implements OnInit, AfterViewChecked {
     });
   }
 
+  async saveEmailToLibrary(content: string): Promise<void> {
+    if (!this.accessToken) {
+      this.errorMessage = 'Please sign in to save emails';
+      return;
+    }
+
+    const subjectMatch = content.match(/Subject:\s*(.+)/i);
+    const subject = subjectMatch ? subjectMatch[1].trim() : 'Untitled Email';
+
+    const lastUserMessage = [...this.messages].reverse().find(m => m.type === 'user');
+    const tone = lastUserMessage?.tone || 'professional';
+    const audience = lastUserMessage?.audience || 'professional';
+
+    const success = await this.preferencesService.saveEmail(this.accessToken, {
+      subject,
+      content,
+      tone,
+      audience,
+      source: 'ai'
+    });
+
+    if (success) {
+      this.showSaveSuccess = true;
+      this.errorMessage = '';
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save email to library';
+    }
+  }
+
+  // Save custom tone
+  async saveCustomTone(): Promise<void> {
+    if (!this.accessToken || !this.customTone.trim()) return;
+
+    const newTone: Tone = {
+      id: `custom-${Date.now()}`,
+      label: this.customTone.trim(),
+      color: 'bg-orange-500',
+      description: 'Custom tone'
+    };
+
+    const success = await this.preferencesService.addTone(this.accessToken, newTone);
+    
+    if (success) {
+      this.customTone = '';
+      this.isCustomTone = false;
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save tone. Maximum 5 tones allowed.';
+    }
+  }
+
+  // Save custom audience
+  async saveCustomAudience(): Promise<void> {
+    if (!this.accessToken || !this.customAudience.trim()) return;
+
+    const newAudience: Audience = {
+      id: `custom-${Date.now()}`,
+      label: this.customAudience.trim(),
+      icon: 'user',
+      description: 'Custom audience'
+    };
+
+    const success = await this.preferencesService.updateAudiences(
+      this.accessToken, 
+      [...this.audiences, newAudience]
+    );
+    
+    if (success) {
+      this.customAudience = '';
+      this.isCustomAudience = false;
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save audience. Maximum 4 audiences allowed.';
+    }
+  }
+
+  // Save custom template
+  async saveCustomTemplate(): Promise<void> {
+    if (!this.accessToken || !this.customTemplate.trim() || !this.customTemplateName.trim()) return;
+
+    const newTemplate: Template = {
+      id: `custom-${Date.now()}`,
+      name: this.customTemplateName.trim(),
+      prompt: this.customTemplate.trim(),
+      isCustom: true
+    };
+
+    const success = await this.preferencesService.addTemplate(this.accessToken, newTemplate);
+    
+    if (success) {
+      this.customTemplate = '';
+      this.customTemplateName = '';
+      this.isCustomTemplate = false;
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save template. Maximum 6 templates allowed.';
+    }
+  }
+
+  // Delete tone from settings
+  async deleteToneFromSettings(toneId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const success = await this.preferencesService.deleteTone(this.accessToken, toneId);
+    
+    if (!success) {
+      this.errorMessage = 'Failed to delete tone. Minimum 4 tones required.';
+    }
+  }
+
+  // Delete template from settings
+  async deleteTemplateFromSettings(templateId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const success = await this.preferencesService.deleteTemplate(this.accessToken, templateId);
+    
+    if (!success) {
+      this.errorMessage = 'Failed to delete template. Minimum 6 templates required.';
+    }
+  }
+
+  // Delete email from library
+  async deleteEmailFromLibrary(emailId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const success = await this.preferencesService.deleteEmail(this.accessToken, emailId);
+    
+    if (!success) {
+      this.errorMessage = 'Failed to delete email from library.';
+    }
+  }
+
+  // Toggle email favorite
+  async toggleFavorite(emailId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    await this.preferencesService.toggleEmailFavorite(this.accessToken, emailId);
+  }
+
+  // Start editing an email
+  startEditingEmail(email: any): void {
+    this.editingEmailId = email.id;
+    this.editingEmailSubject = email.subject;
+    this.editingEmailContent = email.content;
+    this.editingEmailTone = email.tone;
+    this.editingEmailAudience = email.audience;
+  }
+
+  // Cancel editing
+  cancelEditingEmail(): void {
+    this.editingEmailId = null;
+    this.editingEmailSubject = '';
+    this.editingEmailContent = '';
+    this.editingEmailTone = '';
+    this.editingEmailAudience = '';
+  }
+
+  // Save edited email
+  async saveEditedEmail(emailId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    // Update the email with new values
+    const success = await this.preferencesService.updateEmail(this.accessToken, emailId, {
+      subject: this.editingEmailSubject,
+      content: this.editingEmailContent,
+      tone: this.editingEmailTone,
+      audience: this.editingEmailAudience,
+      source: 'manual'
+    });
+
+    if (success) {
+      this.cancelEditingEmail();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to save edited email.';
+    }
+  }
+
+  // Reset preferences to defaults
+  async resetPreferencesToDefaults(): Promise<void> {
+    if (!this.accessToken) return;
+
+    if (confirm('Are you sure you want to reset all preferences to defaults? This will delete all custom tones, audiences, templates, and saved emails.')) {
+      const success = await this.preferencesService.resetToDefaults(this.accessToken);
+      
+      if (success) {
+        this.showSaveSuccess = true;
+        setTimeout(() => this.showSaveSuccess = false, 2000);
+      } else {
+        this.errorMessage = 'Failed to reset preferences.';
+      }
+    }
+  }
+
   reset(): void {
     this.messages = [];
     this.lastGeneratedEmail = '';
@@ -359,6 +599,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.customTone = '';
     this.customAudience = '';
     this.customTemplate = '';
+    this.customTemplateName = '';
     this.selectedTone = '';
     this.selectedAudience = '';
     this.selectedTemplate = '';
