@@ -74,6 +74,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   lastGeneratedEmail: string = '';
   errorMessage: string = '';
   showCopySuccess: boolean = false;
+  showSaveSuccess: boolean = false; // NEW: Separate flag for save success
 
   // Data
   tones: Tone[] = [];
@@ -223,17 +224,14 @@ export class AppComponent implements OnInit, AfterViewChecked {
   toggleCustomTemplate(): void {
     this.isCustomTemplate = !this.isCustomTemplate;
     if (this.isCustomTemplate) {
-      // When enabling custom mode, copy input to custom template
       this.customTemplate = this.inputText;
       this.selectedTemplate = '';
     } else {
-      // When disabling custom mode, copy custom template back to input
       this.inputText = this.customTemplate;
       this.customTemplate = '';
     }
   }
 
-  // Watch for custom template changes and sync to input
   onCustomTemplateChange(): void {
     if (this.isCustomTemplate) {
       this.inputText = this.customTemplate;
@@ -252,7 +250,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.customAudience = '';
   }
 
-  // New toggle methods that allow unselecting
   toggleTone(toneId: string): void {
     if (this.selectedTone === toneId) {
       this.selectedTone = '';
@@ -285,17 +282,13 @@ export class AppComponent implements OnInit, AfterViewChecked {
       : this.selectedAudience;
   }
 
-  // NEW: Helper to get the current prompt text
   getCurrentPrompt(): string {
-    // If custom template is active and has content, use it
     if (this.isCustomTemplate && this.customTemplate.trim()) {
       return this.customTemplate.trim();
     }
-    // Otherwise use the main input text
     return this.inputText.trim();
   }
 
-  // NEW: Check if send button should be enabled
   canSend(): boolean {
     const hasPrompt = this.getCurrentPrompt().length > 0;
     return hasPrompt && !this.isGenerating;
@@ -327,7 +320,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
       audience
     };
 
-    // Clear both inputs after sending
     this.inputText = '';
     this.customTemplate = '';
     this.errorMessage = '';
@@ -357,14 +349,12 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
 
   selectTemplate(template: Template): void {
-    // Toggle behavior - if already selected, unselect it
     if (this.selectedTemplate === template.id) {
       this.selectedTemplate = '';
       this.inputText = '';
       this.isCustomTemplate = false;
       this.customTemplate = '';
     } else {
-      // Select the template
       this.inputText = template.prompt;
       this.selectedTemplate = template.id;
       this.isCustomTemplate = false;
@@ -385,11 +375,9 @@ export class AppComponent implements OnInit, AfterViewChecked {
       return;
     }
 
-    // Extract subject from email content (first line after "Subject:")
     const subjectMatch = content.match(/Subject:\s*(.+)/i);
     const subject = subjectMatch ? subjectMatch[1].trim() : 'Untitled Email';
 
-    // Find the last user message to get tone and audience
     const lastUserMessage = [...this.messages].reverse().find(m => m.type === 'user');
     const tone = lastUserMessage?.tone || 'professional';
     const audience = lastUserMessage?.audience || 'professional';
@@ -403,9 +391,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
     });
 
     if (success) {
-      this.showCopySuccess = true;
+      // CHANGED: Use showSaveSuccess instead of showCopySuccess
+      this.showSaveSuccess = true;
       this.errorMessage = '';
-      setTimeout(() => this.showCopySuccess = false, 2000);
+      setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
       this.errorMessage = 'Failed to save email to library';
     }
