@@ -255,7 +255,7 @@
           </div>
         </div>
 
-        <!-- FIX #7: Signature Selection Panel -->
+        <!-- Email Signature Selection Panel -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 transition-colors duration-300">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
@@ -263,14 +263,39 @@
               Email Signature
             </h3>
             <button
-              (click)="toggleSettingsModal()"
-              class="text-gray-400 dark:text-gray-500 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
-              title="Manage signatures">
+              (click)="toggleCustomSignature()"
+              [class]="isCustomSignature ? 'text-yellow-600 dark:text-yellow-400' : 'text-gray-400 dark:text-gray-500'"
+              class="hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+              title="Custom signature">
               <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
             </button>
           </div>
           
-          <div class="space-y-2">
+          <!-- Custom Signature Input -->
+          <div *ngIf="isCustomSignature" class="mb-3">
+            <input
+              type="text"
+              [(ngModel)]="customSignatureName"
+              placeholder="Signature name (e.g., Professional, Work)"
+              class="w-full px-3 py-2 mb-2 border border-yellow-300 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
+            />
+            <textarea
+              [(ngModel)]="customSignatureContent"
+              placeholder="Best regards,&#10;Your Name&#10;Your Title&#10;Your Company"
+              rows="4"
+              class="w-full px-3 py-2 border border-yellow-300 dark:border-yellow-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500 text-sm resize-none font-mono bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 transition-colors duration-300"
+            ></textarea>
+            <button
+              *ngIf="customSignatureName.trim() && customSignatureContent.trim() && (isAuthenticated$ | async)"
+              (click)="saveCustomSignature()"
+              class="mt-2 w-full px-3 py-2 text-sm bg-yellow-500 text-white rounded-lg hover:bg-yellow-600 transition-colors">
+              <lucide-icon [img]="Save" class="w-4 h-4 inline mr-2"></lucide-icon>
+              Save Signature
+            </button>
+          </div>
+          
+          <!-- Default Signature Buttons -->
+          <div *ngIf="!isCustomSignature" class="space-y-2">
             <button
               *ngFor="let signature of signatures"
               (click)="selectedSignatureId = signature.id"

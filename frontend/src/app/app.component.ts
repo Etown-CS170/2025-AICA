@@ -30,7 +30,7 @@ import { distinctUntilChanged } from 'rxjs/operators';
 export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   private shouldScrollToBottom = false;
-  private errorTimeout: any = null; // FIX #6: Add error timeout tracker
+  private errorTimeout: any = null;
 
   // Lucide icons
   readonly Mail = Mail;
@@ -76,6 +76,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   editingSignatureId: string | null = null;
   editingSignatureName: string = '';
   editingSignatureContent: string = '';
+  isCustomSignature: boolean = false; // NEW: Add this line
+  customSignatureName: string = ''; // NEW: Add this line
+  customSignatureContent: string = ''; // NEW: Add this line
 
   // Component state
   messages: Message[] = [];
@@ -263,16 +266,13 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // FIX #6: Auto-dismiss error messages after 3 seconds
   private setErrorMessage(message: string): void {
-    // Clear any existing timeout
     if (this.errorTimeout) {
       clearTimeout(this.errorTimeout);
     }
     
     this.errorMessage = message;
     
-    // Auto-dismiss after 3 seconds
     this.errorTimeout = setTimeout(() => {
       this.errorMessage = '';
       this.errorTimeout = null;
@@ -304,7 +304,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.emailService.checkHealth().subscribe({
       next: () => {},
       error: () => {
-        this.setErrorMessage('Unable to reach the backend service.'); // FIX #6
+        this.setErrorMessage('Unable to reach the backend service.');
       }
     });
   }
@@ -329,6 +329,16 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.inputText = this.customTemplate;
       this.customTemplate = '';
       this.customTemplateName = '';
+    }
+  }
+
+  // NEW: Add this method
+  toggleCustomSignature(): void {
+    this.isCustomSignature = !this.isCustomSignature;
+    if (this.isCustomSignature) {
+      this.customSignatureName = '';
+      this.customSignatureContent = '';
+      this.selectedSignatureId = '';
     }
   }
 
@@ -372,22 +382,22 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   getCurrentTone(): string {
     if (this.isCustomTone && this.customTone.trim()) {
-      return this.customTone.trim().toLowerCase(); // FIX #1: lowercase
+      return this.customTone.trim().toLowerCase();
     }
     if (this.selectedTone) {
       const tone = this.tones.find(t => t.id === this.selectedTone);
-      return tone ? tone.label.toLowerCase() : this.selectedTone.toLowerCase(); // FIX #1 & #2
+      return tone ? tone.label.toLowerCase() : this.selectedTone.toLowerCase();
     }
     return '';
   }
 
   getCurrentAudience(): string {
     if (this.isCustomAudience && this.customAudience.trim()) {
-      return this.customAudience.trim().toLowerCase(); // FIX #1: lowercase
+      return this.customAudience.trim().toLowerCase();
     }
     if (this.selectedAudience) {
       const audience = this.audiences.find(a => a.id === this.selectedAudience);
-      return audience ? audience.label.toLowerCase() : this.selectedAudience.toLowerCase(); // FIX #1 & #2
+      return audience ? audience.label.toLowerCase() : this.selectedAudience.toLowerCase();
     }
     return '';
   }
@@ -400,9 +410,13 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   getCurrentSignature(): string {
+    // NEW: Update this method to handle custom signatures
+    if (this.isCustomSignature && this.customSignatureName.trim()) {
+      return this.customSignatureName.trim().toLowerCase();
+    }
     if (!this.selectedSignatureId) return '';
     const signature = this.signatures.find(s => s.id === this.selectedSignatureId);
-    return signature ? signature.name.toLowerCase() : ''; // FIX #1: lowercase
+    return signature ? signature.name.toLowerCase() : '';
   }
 
   canSend(): boolean {
@@ -440,7 +454,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     this.inputText = '';
     this.customTemplate = '';
-    this.errorMessage = ''; // Clear any existing errors
+    this.errorMessage = '';
     this.isGenerating = true;
 
     try {
@@ -450,7 +464,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       if (response.success && response.email) {
         let emailContent = response.email;
         
-        if (this.selectedSignatureId) {
+        // NEW: Apply custom or saved signature
+        if (this.isCustomSignature && this.customSignatureContent.trim()) {
+          emailContent = this.applyCustomSignatureToEmail(emailContent, this.customSignatureContent);
+        } else if (this.selectedSignatureId) {
           emailContent = this.applySignatureToEmail(emailContent);
         }
         
@@ -464,11 +481,11 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.lastGeneratedEmail = emailContent;
         this.shouldScrollToBottom = true;
       } else {
-        this.setErrorMessage('Unable to generate an email at this time.'); // FIX #6
+        this.setErrorMessage('Unable to generate an email at this time.');
       }
     } catch {
       this.isGenerating = false;
-      this.setErrorMessage('A problem occurred while generating your email.'); // FIX #6
+      this.setErrorMessage('A problem occurred while generating your email.');
     }
   }
 
@@ -495,7 +512,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
 
   async saveEmailToLibrary(content: string): Promise<void> {
     if (!this.accessToken) {
-      this.setErrorMessage('Please sign in to save emails'); // FIX #6
+      this.setErrorMessage('Please sign in to save emails');
       return;
     }
 
@@ -516,14 +533,13 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
 
     if (success) {
       this.showSaveSuccess = true;
-      this.errorMessage = ''; // Clear any errors
+      this.errorMessage = '';
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to save email. Maximum 8 saved emails allowed.'); // FIX #6
+      this.setErrorMessage('Failed to save email. Maximum 8 saved emails allowed.');
     }
   }
 
-  // Save custom tone
   async saveCustomTone(): Promise<void> {
     if (!this.accessToken || !this.customTone.trim()) return;
 
@@ -543,11 +559,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to save tone. Maximum 8 tones allowed.'); // FIX #6
+      this.setErrorMessage('Failed to save tone. Maximum 8 tones allowed.');
     }
   }
 
-  // Save custom audience
   async saveCustomAudience(): Promise<void> {
     if (!this.accessToken || !this.customAudience.trim()) return;
 
@@ -570,11 +585,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to save audience. Maximum 8 audiences allowed.'); // FIX #6
+      this.setErrorMessage('Failed to save audience. Maximum 8 audiences allowed.');
     }
   }
 
-  // Save custom template
   async saveCustomTemplate(): Promise<void> {
     if (!this.accessToken || !this.customTemplate.trim() || !this.customTemplateName.trim()) return;
 
@@ -596,71 +610,88 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to save template. Maximum 8 templates allowed.'); // FIX #6
+      this.setErrorMessage('Failed to save template. Maximum 8 templates allowed.');
     }
   }
 
-  // ==================== DELETE METHODS ====================
-  
-  // Delete tone from settings
+  // NEW: Add this method to save custom signature
+  async saveCustomSignature(): Promise<void> {
+    if (!this.accessToken || !this.customSignatureName.trim() || !this.customSignatureContent.trim()) return;
+
+    const newSignature: Signature = {
+      id: `custom-${Date.now()}`,
+      name: this.customSignatureName.trim(),
+      content: this.customSignatureContent.trim(),
+      isDefault: this.signatures.length === 0
+    };
+
+    const success = await this.preferencesService.addSignature(this.accessToken, newSignature);
+    
+    if (success) {
+      this.selectedSignatureId = newSignature.id;
+      this.customSignatureName = '';
+      this.customSignatureContent = '';
+      this.isCustomSignature = false;
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.setErrorMessage('Failed to save signature. Maximum 8 signatures allowed.');
+    }
+  }
+
   async deleteToneFromSettings(toneId: string): Promise<void> {
     if (!this.accessToken) return;
 
     const success = await this.preferencesService.deleteTone(this.accessToken, toneId);
     
     if (!success) {
-      this.setErrorMessage('Failed to delete tone. Minimum 1 tone required.'); // FIX #6
+      this.setErrorMessage('Failed to delete tone. Minimum 1 tone required.');
     }
   }
 
-  // Delete audience from settings
   async deleteAudienceFromSettings(audienceId: string): Promise<void> {
     if (!this.accessToken) return;
 
     const updatedAudiences = this.audiences.filter(a => a.id !== audienceId);
 
     if (updatedAudiences.length < 1) {
-      this.setErrorMessage('Minimum 1 audience required.'); // FIX #6
+      this.setErrorMessage('Minimum 1 audience required.');
       return;
     }
 
     const success = await this.preferencesService.updateAudiences(this.accessToken, updatedAudiences);
     
     if (!success) {
-      this.setErrorMessage('Failed to delete audience.'); // FIX #6
+      this.setErrorMessage('Failed to delete audience.');
     }
   }
 
-  // Delete template from settings
   async deleteTemplateFromSettings(templateId: string): Promise<void> {
     if (!this.accessToken) return;
 
     const success = await this.preferencesService.deleteTemplate(this.accessToken, templateId);
     
     if (!success) {
-      this.setErrorMessage('Failed to delete template. Minimum 1 template required.'); // FIX #6
+      this.setErrorMessage('Failed to delete template. Minimum 1 template required.');
     }
   }
 
-  // Delete email from library
   async deleteEmailFromLibrary(emailId: string): Promise<void> {
     if (!this.accessToken) return;
 
     const success = await this.preferencesService.deleteEmail(this.accessToken, emailId);
     
     if (!success) {
-      this.setErrorMessage('Failed to delete email from library.'); // FIX #6
+      this.setErrorMessage('Failed to delete email from library.');
     }
   }
 
-  // Toggle email favorite
   async toggleFavorite(emailId: string): Promise<void> {
     if (!this.accessToken) return;
 
     await this.preferencesService.toggleEmailFavorite(this.accessToken, emailId);
   }
 
-  // Start editing an email
   startEditingEmail(email: any): void {
     this.editingEmailId = email.id;
     this.editingEmailSubject = email.subject;
@@ -669,7 +700,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.editingEmailAudience = email.audience;
   }
 
-  // Cancel editing
   cancelEditingEmail(): void {
     this.editingEmailId = null;
     this.editingEmailSubject = '';
@@ -678,7 +708,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.editingEmailAudience = '';
   }
 
-  // Save edited email
   async saveEditedEmail(emailId: string): Promise<void> {
     if (!this.accessToken) return;
 
@@ -695,11 +724,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to save edited email.'); // FIX #6
+      this.setErrorMessage('Failed to save edited email.');
     }
   }
 
-  // Reset preferences to defaults
   async resetPreferencesToDefaults(): Promise<void> {
     if (!this.accessToken) return;
 
@@ -710,12 +738,11 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
         this.showSaveSuccess = true;
         setTimeout(() => this.showSaveSuccess = false, 2000);
       } else {
-        this.setErrorMessage('Failed to reset preferences.'); // FIX #6
+        this.setErrorMessage('Failed to reset preferences.');
       }
     }
   }
 
-  // Toggle manual email add form
   toggleManualEmailAdd(): void {
     this.showManualEmailAdd = !this.showManualEmailAdd;
     if (this.showManualEmailAdd) {
@@ -726,7 +753,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // Cancel manual email add
   cancelManualEmailAdd(): void {
     this.showManualEmailAdd = false;
     this.manualEmailSubject = '';
@@ -735,7 +761,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.manualEmailAudience = '';
   }
 
-  // Check if manual email can be saved
   canSaveManualEmail(): boolean {
     return this.manualEmailSubject.trim().length > 0 &&
            this.manualEmailContent.trim().length > 0 &&
@@ -743,7 +768,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
            this.manualEmailAudience.trim().length > 0;
   }
 
-  // Save manual email
   async saveManualEmail(): Promise<void> {
     if (!this.accessToken || !this.canSaveManualEmail()) return;
 
@@ -761,12 +785,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.errorMessage = '';
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to save email. Maximum 8 saved emails allowed.'); // FIX #6
+      this.setErrorMessage('Failed to save email. Maximum 8 saved emails allowed.');
     }
   }
 
-  // ==================== TONE MANAGEMENT ====================
-  
   toggleAddTone(): void {
     this.showAddTone = !this.showAddTone;
     if (this.showAddTone) {
@@ -802,7 +824,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to add tone. Maximum 8 tones allowed.'); // FIX #6
+      this.setErrorMessage('Failed to add tone. Maximum 8 tones allowed.');
     }
   }
 
@@ -834,12 +856,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to update tone.'); // FIX #6
+      this.setErrorMessage('Failed to update tone.');
     }
   }
 
-  // ==================== AUDIENCE MANAGEMENT ====================
-  
   toggleAddAudience(): void {
     this.showAddAudience = !this.showAddAudience;
     if (this.showAddAudience) {
@@ -878,7 +898,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to add audience. Maximum 8 audiences allowed.'); // FIX #6
+      this.setErrorMessage('Failed to add audience. Maximum 8 audiences allowed.');
     }
   }
 
@@ -910,12 +930,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to update audience.'); // FIX #6
+      this.setErrorMessage('Failed to update audience.');
     }
   }
 
-  // ==================== TEMPLATE MANAGEMENT ====================
-  
   toggleAddTemplate(): void {
     this.showAddTemplate = !this.showAddTemplate;
     if (this.showAddTemplate) {
@@ -951,7 +969,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to add template. Maximum 8 templates allowed.'); // FIX #6
+      this.setErrorMessage('Failed to add template. Maximum 8 templates allowed.');
     }
   }
 
@@ -983,12 +1001,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to update template.'); // FIX #6
+      this.setErrorMessage('Failed to update template.');
     }
   }
-
-
-  // ==================== SIGNATURE MANAGEMENT ====================
 
   toggleAddSignature(): void {
     this.showAddSignature = !this.showAddSignature;
@@ -1027,7 +1042,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to add signature. Maximum 8 signatures allowed.'); // FIX #6
+      this.setErrorMessage('Failed to add signature. Maximum 8 signatures allowed.');
     }
   }
 
@@ -1059,7 +1074,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to update signature.'); // FIX #6
+      this.setErrorMessage('Failed to update signature.');
     }
   }
 
@@ -1069,7 +1084,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     const success = await this.preferencesService.deleteSignature(this.accessToken, signatureId);
     
     if (!success) {
-      this.setErrorMessage('Failed to delete signature. Minimum 1 signature required.'); // FIX #6
+      this.setErrorMessage('Failed to delete signature. Minimum 1 signature required.');
     }
   }
 
@@ -1083,7 +1098,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.setErrorMessage('Failed to set default signature.'); // FIX #6
+      this.setErrorMessage('Failed to set default signature.');
     }
   }
 
@@ -1091,25 +1106,27 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     const signature = this.signatures.find(s => s.id === this.selectedSignatureId);
     if (!signature) return emailContent;
 
-    // FIX #5: Remove ALL common AI-generated signature patterns
     let cleanedContent = emailContent;
     
-    // Pattern 1: "Warm regards,\n[Your Name]" or similar
     cleanedContent = cleanedContent.replace(/\n\n(Warm regards|Best regards|Sincerely|Kind regards|Regards|Thanks|Thank you|Cheers),?\s*\n+\[Your Name\].*$/s, '');
-    
-    // Pattern 2: Just "[Your Name]" at the end
     cleanedContent = cleanedContent.replace(/\n+\[Your Name\].*$/s, '');
-    
-    // Pattern 3: "Warm regards," followed by anything at the end
     cleanedContent = cleanedContent.replace(/\n\n(Warm regards|Best regards|Sincerely|Kind regards|Regards),?\s*$/s, '');
-    
-    // Trim any trailing whitespace
     cleanedContent = cleanedContent.trim();
     
-    // Now append the real signature
     return cleanedContent + '\n\n' + signature.content;
   }
 
+  // NEW: Add this method for custom signatures
+  applyCustomSignatureToEmail(emailContent: string, customSignature: string): string {
+    let cleanedContent = emailContent;
+    
+    cleanedContent = cleanedContent.replace(/\n\n(Warm regards|Best regards|Sincerely|Kind regards|Regards|Thanks|Thank you|Cheers),?\s*\n+\[Your Name\].*$/s, '');
+    cleanedContent = cleanedContent.replace(/\n+\[Your Name\].*$/s, '');
+    cleanedContent = cleanedContent.replace(/\n\n(Warm regards|Best regards|Sincerely|Kind regards|Regards),?\s*$/s, '');
+    cleanedContent = cleanedContent.trim();
+    
+    return cleanedContent + '\n\n' + customSignature;
+  }
 
   reset(): void {
     this.messages = [];
@@ -1123,10 +1140,13 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.isCustomTone = false;
     this.isCustomAudience = false;
     this.isCustomTemplate = false;
+    this.isCustomSignature = false;
     this.customTone = '';
     this.customAudience = '';
     this.customTemplate = '';
     this.customTemplateName = '';
+    this.customSignatureName = '';
+    this.customSignatureContent = '';
     this.selectedTone = '';
     this.selectedAudience = '';
     this.selectedTemplate = '';
