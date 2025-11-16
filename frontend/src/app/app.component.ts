@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewChecked, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
@@ -27,9 +27,10 @@ import { distinctUntilChanged } from 'rxjs/operators';
   styleUrls: ['./app.component.css'],
   providers: [EmailService, PreferencesService]
 })
-export class AppComponent implements OnInit, AfterViewChecked {
+export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   private shouldScrollToBottom = false;
+  private errorTimeout: any = null; // FIX #6: Add error timeout tracker
 
   // Lucide icons
   readonly Mail = Mail;
@@ -149,6 +150,12 @@ export class AppComponent implements OnInit, AfterViewChecked {
     public auth: AuthService
   ) {}
 
+  ngOnDestroy(): void {
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+    }
+  }
+
   ngOnInit(): void {
     this.loadTones();
     this.loadAudiences();
@@ -256,6 +263,22 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
+  // FIX #6: Auto-dismiss error messages after 3 seconds
+  private setErrorMessage(message: string): void {
+    // Clear any existing timeout
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+    }
+    
+    this.errorMessage = message;
+    
+    // Auto-dismiss after 3 seconds
+    this.errorTimeout = setTimeout(() => {
+      this.errorMessage = '';
+      this.errorTimeout = null;
+    }, 3000);
+  }
+
   loadTones(): void {
     this.emailService.getTones().subscribe({
       next: (tones) => this.tones = tones,
@@ -281,7 +304,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.emailService.checkHealth().subscribe({
       next: () => {},
       error: () => {
-        this.errorMessage = 'Unable to reach the backend service.';
+        this.setErrorMessage('Unable to reach the backend service.'); // FIX #6
       }
     });
   }
@@ -394,7 +417,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     const tone = this.getCurrentTone();
     const audience = this.getCurrentAudience();
-    const signatureName = this.getCurrentSignature(); // FIX #4: Get signature name
+    const signatureName = this.getCurrentSignature();
 
     const userMessage: Message = {
       id: Date.now(),
@@ -402,7 +425,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       content: promptText,
       tone,
       audience,
-      signature: signatureName, // FIX #4: Add signature to message
+      signature: signatureName,
       timestamp: new Date()
     };
 
@@ -417,7 +440,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     this.inputText = '';
     this.customTemplate = '';
-    this.errorMessage = '';
+    this.errorMessage = ''; // Clear any existing errors
     this.isGenerating = true;
 
     try {
@@ -427,7 +450,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
       if (response.success && response.email) {
         let emailContent = response.email;
         
-        // FIX #5: Apply signature and remove duplicates
         if (this.selectedSignatureId) {
           emailContent = this.applySignatureToEmail(emailContent);
         }
@@ -442,11 +464,11 @@ export class AppComponent implements OnInit, AfterViewChecked {
         this.lastGeneratedEmail = emailContent;
         this.shouldScrollToBottom = true;
       } else {
-        this.errorMessage = 'Unable to generate an email at this time.';
+        this.setErrorMessage('Unable to generate an email at this time.'); // FIX #6
       }
     } catch {
       this.isGenerating = false;
-      this.errorMessage = 'A problem occurred while generating your email.';
+      this.setErrorMessage('A problem occurred while generating your email.'); // FIX #6
     }
   }
 
@@ -473,7 +495,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
   async saveEmailToLibrary(content: string): Promise<void> {
     if (!this.accessToken) {
-      this.errorMessage = 'Please sign in to save emails';
+      this.setErrorMessage('Please sign in to save emails'); // FIX #6
       return;
     }
 
@@ -494,10 +516,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     if (success) {
       this.showSaveSuccess = true;
-      this.errorMessage = '';
+      this.errorMessage = ''; // Clear any errors
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save email. Maximum 8 saved emails allowed.';
+      this.setErrorMessage('Failed to save email. Maximum 8 saved emails allowed.'); // FIX #6
     }
   }
 
@@ -515,13 +537,13 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.addTone(this.accessToken, newTone);
     
     if (success) {
-      this.selectedTone = newTone.id; // FIX #3: Auto-select the new tone
+      this.selectedTone = newTone.id;
       this.customTone = '';
       this.isCustomTone = false;
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save tone. Maximum 8 tones allowed.';
+      this.setErrorMessage('Failed to save tone. Maximum 8 tones allowed.'); // FIX #6
     }
   }
 
@@ -542,13 +564,13 @@ export class AppComponent implements OnInit, AfterViewChecked {
     );
     
     if (success) {
-      this.selectedAudience = newAudience.id; // FIX #3: Auto-select the new audience
+      this.selectedAudience = newAudience.id;
       this.customAudience = '';
       this.isCustomAudience = false;
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save audience. Maximum 8 audiences allowed.';
+      this.setErrorMessage('Failed to save audience. Maximum 8 audiences allowed.'); // FIX #6
     }
   }
 
@@ -566,15 +588,15 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.addTemplate(this.accessToken, newTemplate);
     
     if (success) {
-      this.selectedTemplate = newTemplate.id; // FIX #3: Auto-select the new template
-      this.inputText = newTemplate.prompt; // Also set the input text
+      this.selectedTemplate = newTemplate.id;
+      this.inputText = newTemplate.prompt;
       this.customTemplate = '';
       this.customTemplateName = '';
       this.isCustomTemplate = false;
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save template. Maximum 8 templates allowed.';
+      this.setErrorMessage('Failed to save template. Maximum 8 templates allowed.'); // FIX #6
     }
   }
 
@@ -587,7 +609,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.deleteTone(this.accessToken, toneId);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete tone. Minimum 1 tone required.';
+      this.setErrorMessage('Failed to delete tone. Minimum 1 tone required.'); // FIX #6
     }
   }
 
@@ -598,14 +620,14 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const updatedAudiences = this.audiences.filter(a => a.id !== audienceId);
 
     if (updatedAudiences.length < 1) {
-      this.errorMessage = 'Minimum 1 audience required.';
+      this.setErrorMessage('Minimum 1 audience required.'); // FIX #6
       return;
     }
 
     const success = await this.preferencesService.updateAudiences(this.accessToken, updatedAudiences);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete audience.';
+      this.setErrorMessage('Failed to delete audience.'); // FIX #6
     }
   }
 
@@ -616,7 +638,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.deleteTemplate(this.accessToken, templateId);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete template. Minimum 1 template required.';
+      this.setErrorMessage('Failed to delete template. Minimum 1 template required.'); // FIX #6
     }
   }
 
@@ -627,7 +649,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.deleteEmail(this.accessToken, emailId);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete email from library.';
+      this.setErrorMessage('Failed to delete email from library.'); // FIX #6
     }
   }
 
@@ -673,7 +695,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save edited email.';
+      this.setErrorMessage('Failed to save edited email.'); // FIX #6
     }
   }
 
@@ -688,7 +710,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
         this.showSaveSuccess = true;
         setTimeout(() => this.showSaveSuccess = false, 2000);
       } else {
-        this.errorMessage = 'Failed to reset preferences.';
+        this.setErrorMessage('Failed to reset preferences.'); // FIX #6
       }
     }
   }
@@ -739,7 +761,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.errorMessage = '';
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to save email. Maximum 8 saved emails allowed.';
+      this.setErrorMessage('Failed to save email. Maximum 8 saved emails allowed.'); // FIX #6
     }
   }
 
@@ -780,7 +802,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add tone. Maximum 8 tones allowed.';
+      this.setErrorMessage('Failed to add tone. Maximum 8 tones allowed.'); // FIX #6
     }
   }
 
@@ -812,7 +834,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to update tone.';
+      this.setErrorMessage('Failed to update tone.'); // FIX #6
     }
   }
 
@@ -856,7 +878,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add audience. Maximum 8 audiences allowed.';
+      this.setErrorMessage('Failed to add audience. Maximum 8 audiences allowed.'); // FIX #6
     }
   }
 
@@ -888,7 +910,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to update audience.';
+      this.setErrorMessage('Failed to update audience.'); // FIX #6
     }
   }
 
@@ -929,7 +951,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add template. Maximum 8 templates allowed.';
+      this.setErrorMessage('Failed to add template. Maximum 8 templates allowed.'); // FIX #6
     }
   }
 
@@ -961,7 +983,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to update template.';
+      this.setErrorMessage('Failed to update template.'); // FIX #6
     }
   }
 
@@ -994,17 +1016,18 @@ export class AppComponent implements OnInit, AfterViewChecked {
       id: `signature-${Date.now()}`,
       name: this.newSignatureName.trim(),
       content: this.newSignatureContent.trim(),
-      isDefault: this.signatures.length === 0 // First signature is default
+      isDefault: this.signatures.length === 0
     };
 
     const success = await this.preferencesService.addSignature(this.accessToken, newSignature);
     
     if (success) {
+      this.selectedSignatureId = newSignature.id;
       this.cancelAddSignature();
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to add signature. Maximum 8 signatures allowed.';
+      this.setErrorMessage('Failed to add signature. Maximum 8 signatures allowed.'); // FIX #6
     }
   }
 
@@ -1036,7 +1059,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to update signature.';
+      this.setErrorMessage('Failed to update signature.'); // FIX #6
     }
   }
 
@@ -1046,7 +1069,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.deleteSignature(this.accessToken, signatureId);
     
     if (!success) {
-      this.errorMessage = 'Failed to delete signature. Minimum 1 signature required.';
+      this.setErrorMessage('Failed to delete signature. Minimum 1 signature required.'); // FIX #6
     }
   }
 
@@ -1060,7 +1083,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.showSaveSuccess = true;
       setTimeout(() => this.showSaveSuccess = false, 2000);
     } else {
-      this.errorMessage = 'Failed to set default signature.';
+      this.setErrorMessage('Failed to set default signature.'); // FIX #6
     }
   }
 
@@ -1093,6 +1116,10 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.lastGeneratedEmail = '';
     this.inputText = '';
     this.errorMessage = '';
+    if (this.errorTimeout) {
+      clearTimeout(this.errorTimeout);
+      this.errorTimeout = null;
+    }
     this.isCustomTone = false;
     this.isCustomAudience = false;
     this.isCustomTemplate = false;
@@ -1103,7 +1130,6 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.selectedTone = '';
     this.selectedAudience = '';
     this.selectedTemplate = '';
-    // Keep selectedSignatureId - don't reset it so default stays selected
   }
 
   getAudienceIcon(audienceId: string): LucideIconData {

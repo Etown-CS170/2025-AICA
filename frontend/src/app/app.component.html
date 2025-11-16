@@ -255,13 +255,19 @@
           </div>
         </div>
 
-        <!-- Signature Selection -->
+        <!-- FIX #7: Signature Selection Panel -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-md p-5 transition-colors duration-300">
           <div class="flex items-center justify-between mb-3">
             <h3 class="font-semibold text-gray-800 dark:text-white flex items-center gap-2">
               <div class="w-2 h-2 bg-yellow-500 rounded-full"></div>
               Email Signature
             </h3>
+            <button
+              (click)="toggleSettingsModal()"
+              class="text-gray-400 dark:text-gray-500 hover:text-yellow-600 dark:hover:text-yellow-400 transition-colors"
+              title="Manage signatures">
+              <lucide-icon [img]="Edit3" class="w-4 h-4"></lucide-icon>
+            </button>
           </div>
           
           <div class="space-y-2">
@@ -440,7 +446,7 @@
       </div>
 
       <!-- Modal Content -->
-      <div class="overflow-y-auto max-h-[calc(90vh-180px)] p-6">
+      <div class="overflow-y-auto max-h-[calc(90vh-200px)] p-6">
         
         <!-- Saved Tones Section -->
         <div class="mb-8">
@@ -673,7 +679,7 @@
           </p>
         </div>
 
-        <!-- Saved Templates Section -->
+        <!-- FIX #8: Saved Templates Section - 2 Column Layout -->
         <div class="mb-8">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
@@ -725,7 +731,8 @@
             </div>
           </div>
 
-          <div class="grid grid-cols-1 gap-3">
+          <!-- FIX #8: 2-Column Grid for Templates -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div *ngFor="let template of templates" 
                  class="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               
@@ -991,7 +998,7 @@
           </div>
         </div>
 
-        <!-- Saved Signatures Section -->
+        <!-- FIX #8: Saved Signatures Section - 2 Column Layout -->
         <div class="mb-8">
           <div class="flex items-center justify-between mb-4">
             <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
@@ -1054,8 +1061,8 @@
             <p class="text-sm mt-1">Click "Add Signature" to create your first email signature</p>
           </div>
 
-          <!-- Signature List -->
-          <div class="grid grid-cols-1 gap-3">
+          <!-- FIX #8: 2-Column Grid for Signatures -->
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div *ngFor="let signature of signatures" 
                 class="flex items-start justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
               
