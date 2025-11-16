@@ -45,5 +45,13 @@ export interface Message {
   content: string;
   tone?: string;
   audience?: string;
+  signature?: string;  // NEW: Add this line
   timestamp: Date;
+}
+
+export interface Signature {
+  id: string;
+  name: string;
+  content: string;
+  isDefault?: boolean;
 }

@@ -1,4 +1,4 @@
-import { UserPreferences, IUserPreferences, ITone, IAudience, ITemplate, ISavedEmail } from '../models/user-preferences.model';
+import { UserPreferences, IUserPreferences, ITone, IAudience, ITemplate, ISavedEmail, ISignature } from '../models/user-preferences.model';
 import { Document } from 'mongoose';
 
 class UserPreferencesService {
@@ -25,6 +25,15 @@ class UserPreferencesService {
     { id: 'feedback-request', name: 'Feedback Request', prompt: 'Request feedback on' }
   ];
 
+  private readonly DEFAULT_SIGNATURES: ISignature[] = [
+    {
+      id: 'default-professional',
+      name: 'Professional',
+      content: 'Best regards,\n[Your Name]\n[Your Title]\n[Your Company]',
+      isDefault: true
+    }
+  ];
+
   async getUserPreferences(userId: string): Promise<IUserPreferences> {
     let preferences = await UserPreferences.findOne({ userId });
 
@@ -41,7 +50,8 @@ class UserPreferencesService {
       tones: this.DEFAULT_TONES,
       audiences: this.DEFAULT_AUDIENCES,
       templates: this.DEFAULT_TEMPLATES,
-      savedEmails: []
+      savedEmails: [],
+      signatures: this.DEFAULT_SIGNATURES
     });
 
     return await preferences.save();
@@ -212,6 +222,63 @@ async saveEmail(userId: string, email: Omit<ISavedEmail, 'id' | 'timestamp'>): P
     return null;
   }
 
+  // ==================== SIGNATURES ====================
+  
+  async updateSignatures(userId: string, signatures: ISignature[]): Promise<IUserPreferences | null> {
+    if (signatures.length > 8) {
+      throw new Error('Maximum 8 signatures allowed');
+    }
+
+    return await UserPreferences.findOneAndUpdate(
+      { userId },
+      { signatures },
+      { new: true, upsert: true }
+    );
+  }
+
+  async addSignature(userId: string, signature: ISignature): Promise<IUserPreferences | null> {
+    const prefs = await this.getUserPreferences(userId);
+    
+    if (prefs.signatures.length >= 8) {
+      throw new Error('Maximum 8 signatures allowed');
+    }
+
+    // If this signature is marked as default, unset all other defaults
+    if (signature.isDefault) {
+      prefs.signatures.forEach(s => s.isDefault = false);
+    }
+
+    prefs.signatures.push(signature);
+    return await prefs.save();
+  }
+
+  async deleteSignature(userId: string, signatureId: string): Promise<IUserPreferences | null> {
+    const prefs = await this.getUserPreferences(userId);
+    
+    if (prefs.signatures.length <= 1) {
+      throw new Error('Minimum 1 signature required');
+    }
+
+    prefs.signatures = prefs.signatures.filter(s => s.id !== signatureId);
+    return await prefs.save();
+  }
+
+  async setDefaultSignature(userId: string, signatureId: string): Promise<IUserPreferences | null> {
+    const prefs = await this.getUserPreferences(userId);
+    
+    // Unset all defaults
+    prefs.signatures.forEach(s => s.isDefault = false);
+    
+    // Set the new default
+    const signature = prefs.signatures.find(s => s.id === signatureId);
+    if (signature) {
+      signature.isDefault = true;
+      return await prefs.save();
+    }
+
+    return null;
+  }
+
   async resetToDefaults(userId: string): Promise<IUserPreferences | null> {
     return await UserPreferences.findOneAndUpdate(
       { userId },
@@ -219,7 +286,8 @@ async saveEmail(userId: string, email: Omit<ISavedEmail, 'id' | 'timestamp'>): P
         tones: this.DEFAULT_TONES,
         audiences: this.DEFAULT_AUDIENCES,
         templates: this.DEFAULT_TEMPLATES,
-        savedEmails: []
+        savedEmails: [],
+        signatures: this.DEFAULT_SIGNATURES
       },
       { new: true, upsert: true }
     );

@@ -32,6 +32,12 @@ router.put('/emails/:id', (req, res) => preferencesController.updateEmail(req, r
 router.delete('/emails/:id', (req, res) => preferencesController.deleteEmail(req, res));
 router.patch('/emails/:id/favorite', (req, res) => preferencesController.toggleEmailFavorite(req, res));
 
+// Signatures
+router.put('/signatures', (req, res) => preferencesController.updateSignatures(req, res));
+router.post('/signatures', (req, res) => preferencesController.addSignature(req, res));
+router.delete('/signatures/:id', (req, res) => preferencesController.deleteSignature(req, res));
+router.patch('/signatures/:id/default', (req, res) => preferencesController.setDefaultSignature(req, res));
+
 // Reset
 router.post('/reset', (req, res) => preferencesController.resetToDefaults(req, res));
 

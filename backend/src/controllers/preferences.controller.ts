@@ -314,6 +314,97 @@ class PreferencesController {
     }
   }
 
+  // ==================== SIGNATURES ====================
+
+  /**
+   * Update signatures
+   * PUT /api/preferences/signatures
+   */
+  async updateSignatures(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const { signatures } = req.body;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      if (!Array.isArray(signatures) || signatures.length > 8) {
+        res.status(400).json({ success: false, error: 'Invalid signatures data' });
+        return;
+      }
+
+      const updated = await userPreferencesService.updateSignatures(userId, signatures);
+      res.status(200).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  /**
+   * Add a signature
+   * POST /api/preferences/signatures
+   */
+  async addSignature(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const signature = req.body;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const updated = await userPreferencesService.addSignature(userId, signature);
+      res.status(201).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  /**
+   * Delete a signature
+   * DELETE /api/preferences/signatures/:id
+   */
+  async deleteSignature(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const { id } = req.params;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const updated = await userPreferencesService.deleteSignature(userId, id);
+      res.status(200).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
+  /**
+   * Set default signature
+   * PATCH /api/preferences/signatures/:id/default
+   */
+  async setDefaultSignature(req: Request, res: Response): Promise<void> {
+    try {
+      const userId = (req as any).auth?.payload?.sub;
+      const { id } = req.params;
+
+      if (!userId) {
+        res.status(401).json({ success: false, error: 'Unauthorized' });
+        return;
+      }
+
+      const updated = await userPreferencesService.setDefaultSignature(userId, id);
+      res.status(200).json({ success: true, data: updated });
+    } catch (error: any) {
+      res.status(400).json({ success: false, error: error.message });
+    }
+  }
+
   /**
    * Reset to defaults
    * POST /api/preferences/reset

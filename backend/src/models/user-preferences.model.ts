@@ -32,12 +32,20 @@ export interface ISavedEmail {
   isFavorite?: boolean;
 }
 
+export interface ISignature {
+  id: string;
+  name: string;
+  content: string;
+  isDefault?: boolean;
+}
+
 export interface IUserPreferencesDoc {
   userId: string; // Auth0 user ID
   tones: ITone[];
   audiences: IAudience[];
   templates: ITemplate[];
   savedEmails: ISavedEmail[];
+  signatures: ISignature[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -76,12 +84,20 @@ const SavedEmailSchema = new Schema({
   isFavorite: { type: Boolean, default: false }
 });
 
+const SignatureSchema = new Schema({
+  id: { type: String, required: true },
+  name: { type: String, required: true },
+  content: { type: String, required: true },
+  isDefault: { type: Boolean, default: false }
+});
+
 const UserPreferencesSchema = new Schema({
   userId: { type: String, required: true, unique: true, index: true },
   tones: { type: [ToneSchema], default: [] },
   audiences: { type: [AudienceSchema], default: [] },
   templates: { type: [TemplateSchema], default: [] },
-  savedEmails: { type: [SavedEmailSchema], default: [] }
+  savedEmails: { type: [SavedEmailSchema], default: [] },
+  signatures: { type: [SignatureSchema], default: [] }
 }, {
   timestamps: true
 });

@@ -4,14 +4,16 @@ import { FormsModule } from '@angular/forms';
 import { 
   Mail, Send, Copy, RotateCcw, GraduationCap, 
   User, Users, Briefcase, LucideAngularModule, LucideIconData,
-  Edit3, LogIn, LogOut, Moon, Sun, Save, Settings, X, Trash2, Star, Plus
+  Edit3, LogIn, LogOut, Moon, Sun, Save, Settings, X, Trash2, Star, 
+  Plus, FileSignature
 } from 'lucide-angular';
 import { EmailService } from './services/email.service';
 import { PreferencesService } from './services/preferences.service';
 import { ThemeService } from './services/theme.service';
 import { 
   Message, Tone, Audience, Template, 
-  EmailRequest, EmailResponse
+  EmailRequest, EmailResponse,
+  Signature
 } from './models/email.model';
 import { AuthService } from '@auth0/auth0-angular';
 import { environment } from '../environments/environment';
@@ -49,6 +51,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
   readonly Trash2 = Trash2;
   readonly Star = Star;
   readonly Plus = Plus;
+  readonly FileSignature = FileSignature;
 
   // Auth observables
   get isAuthenticated$() {
@@ -62,6 +65,16 @@ export class AppComponent implements OnInit, AfterViewChecked {
   get theme$() {
     return this.themeService.theme$;
   }
+
+  // Signature state
+  signatures: Signature[] = [];
+  selectedSignatureId: string = '';
+  showAddSignature: boolean = false;
+  newSignatureName: string = '';
+  newSignatureContent: string = '';
+  editingSignatureId: string | null = null;
+  editingSignatureName: string = '';
+  editingSignatureContent: string = '';
 
   // Component state
   messages: Message[] = [];
@@ -158,6 +171,17 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.preferencesService.templates$.subscribe(templates => {
       if (templates.length > 0) {
         this.templates = templates;
+      }
+    });
+
+    this.preferencesService.signatures$.subscribe(signatures => {
+      if (signatures.length > 0) {
+        this.signatures = signatures;
+        // Auto-select default signature
+        const defaultSig = signatures.find(s => s.isDefault);
+        if (defaultSig) {
+          this.selectedSignatureId = defaultSig.id;
+        }
       }
     });
 
@@ -324,15 +348,25 @@ export class AppComponent implements OnInit, AfterViewChecked {
   }
 
   getCurrentTone(): string {
-    return this.isCustomTone && this.customTone.trim()
-      ? this.customTone.trim()
-      : this.selectedTone;
+    if (this.isCustomTone && this.customTone.trim()) {
+      return this.customTone.trim().toLowerCase(); // FIX #1: lowercase
+    }
+    if (this.selectedTone) {
+      const tone = this.tones.find(t => t.id === this.selectedTone);
+      return tone ? tone.label.toLowerCase() : this.selectedTone.toLowerCase(); // FIX #1 & #2
+    }
+    return '';
   }
 
   getCurrentAudience(): string {
-    return this.isCustomAudience && this.customAudience.trim()
-      ? this.customAudience.trim()
-      : this.selectedAudience;
+    if (this.isCustomAudience && this.customAudience.trim()) {
+      return this.customAudience.trim().toLowerCase(); // FIX #1: lowercase
+    }
+    if (this.selectedAudience) {
+      const audience = this.audiences.find(a => a.id === this.selectedAudience);
+      return audience ? audience.label.toLowerCase() : this.selectedAudience.toLowerCase(); // FIX #1 & #2
+    }
+    return '';
   }
 
   getCurrentPrompt(): string {
@@ -340,6 +374,12 @@ export class AppComponent implements OnInit, AfterViewChecked {
       return this.customTemplate.trim();
     }
     return this.inputText.trim();
+  }
+
+  getCurrentSignature(): string {
+    if (!this.selectedSignatureId) return '';
+    const signature = this.signatures.find(s => s.id === this.selectedSignatureId);
+    return signature ? signature.name.toLowerCase() : ''; // FIX #1: lowercase
   }
 
   canSend(): boolean {
@@ -354,6 +394,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     const tone = this.getCurrentTone();
     const audience = this.getCurrentAudience();
+    const signatureName = this.getCurrentSignature(); // FIX #4: Get signature name
 
     const userMessage: Message = {
       id: Date.now(),
@@ -361,6 +402,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
       content: promptText,
       tone,
       audience,
+      signature: signatureName, // FIX #4: Add signature to message
       timestamp: new Date()
     };
 
@@ -369,8 +411,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
 
     const request: EmailRequest = {
       prompt: promptText,
-      tone,
-      audience
+      tone: this.selectedTone || this.customTone,
+      audience: this.selectedAudience || this.customAudience
     };
 
     this.inputText = '';
@@ -383,14 +425,21 @@ export class AppComponent implements OnInit, AfterViewChecked {
       this.isGenerating = false;
 
       if (response.success && response.email) {
+        let emailContent = response.email;
+        
+        // FIX #5: Apply signature and remove duplicates
+        if (this.selectedSignatureId) {
+          emailContent = this.applySignatureToEmail(emailContent);
+        }
+        
         const aiMessage: Message = {
           id: Date.now() + 1,
           type: 'ai',
-          content: response.email,
+          content: emailContent,
           timestamp: new Date()
         };
         this.messages.push(aiMessage);
-        this.lastGeneratedEmail = response.email;
+        this.lastGeneratedEmail = emailContent;
         this.shouldScrollToBottom = true;
       } else {
         this.errorMessage = 'Unable to generate an email at this time.';
@@ -466,6 +515,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.addTone(this.accessToken, newTone);
     
     if (success) {
+      this.selectedTone = newTone.id; // FIX #3: Auto-select the new tone
       this.customTone = '';
       this.isCustomTone = false;
       this.showSaveSuccess = true;
@@ -492,6 +542,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     );
     
     if (success) {
+      this.selectedAudience = newAudience.id; // FIX #3: Auto-select the new audience
       this.customAudience = '';
       this.isCustomAudience = false;
       this.showSaveSuccess = true;
@@ -515,6 +566,8 @@ export class AppComponent implements OnInit, AfterViewChecked {
     const success = await this.preferencesService.addTemplate(this.accessToken, newTemplate);
     
     if (success) {
+      this.selectedTemplate = newTemplate.id; // FIX #3: Auto-select the new template
+      this.inputText = newTemplate.prompt; // Also set the input text
       this.customTemplate = '';
       this.customTemplateName = '';
       this.isCustomTemplate = false;
@@ -912,6 +965,129 @@ export class AppComponent implements OnInit, AfterViewChecked {
     }
   }
 
+
+  // ==================== SIGNATURE MANAGEMENT ====================
+
+  toggleAddSignature(): void {
+    this.showAddSignature = !this.showAddSignature;
+    if (this.showAddSignature) {
+      this.newSignatureName = '';
+      this.newSignatureContent = '';
+    }
+  }
+
+  cancelAddSignature(): void {
+    this.showAddSignature = false;
+    this.newSignatureName = '';
+    this.newSignatureContent = '';
+  }
+
+  canSaveNewSignature(): boolean {
+    return this.newSignatureName.trim().length > 0 && 
+          this.newSignatureContent.trim().length > 0;
+  }
+
+  async saveNewSignature(): Promise<void> {
+    if (!this.accessToken || !this.canSaveNewSignature()) return;
+
+    const newSignature: Signature = {
+      id: `signature-${Date.now()}`,
+      name: this.newSignatureName.trim(),
+      content: this.newSignatureContent.trim(),
+      isDefault: this.signatures.length === 0 // First signature is default
+    };
+
+    const success = await this.preferencesService.addSignature(this.accessToken, newSignature);
+    
+    if (success) {
+      this.cancelAddSignature();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to add signature. Maximum 8 signatures allowed.';
+    }
+  }
+
+  startEditingSignature(signature: Signature): void {
+    this.editingSignatureId = signature.id;
+    this.editingSignatureName = signature.name;
+    this.editingSignatureContent = signature.content;
+  }
+
+  cancelEditingSignature(): void {
+    this.editingSignatureId = null;
+    this.editingSignatureName = '';
+    this.editingSignatureContent = '';
+  }
+
+  async saveEditedSignature(signatureId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const updatedSignatures = this.signatures.map(s => 
+      s.id === signatureId 
+        ? { ...s, name: this.editingSignatureName.trim(), content: this.editingSignatureContent.trim() }
+        : s
+    );
+
+    const success = await this.preferencesService.updateSignatures(this.accessToken, updatedSignatures);
+    
+    if (success) {
+      this.cancelEditingSignature();
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to update signature.';
+    }
+  }
+
+  async deleteSignatureFromSettings(signatureId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const success = await this.preferencesService.deleteSignature(this.accessToken, signatureId);
+    
+    if (!success) {
+      this.errorMessage = 'Failed to delete signature. Minimum 1 signature required.';
+    }
+  }
+
+  async setAsDefaultSignature(signatureId: string): Promise<void> {
+    if (!this.accessToken) return;
+
+    const success = await this.preferencesService.setDefaultSignature(this.accessToken, signatureId);
+    
+    if (success) {
+      this.selectedSignatureId = signatureId;
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
+    } else {
+      this.errorMessage = 'Failed to set default signature.';
+    }
+  }
+
+  applySignatureToEmail(emailContent: string): string {
+    const signature = this.signatures.find(s => s.id === this.selectedSignatureId);
+    if (!signature) return emailContent;
+
+    // FIX #5: Remove ALL common AI-generated signature patterns
+    let cleanedContent = emailContent;
+    
+    // Pattern 1: "Warm regards,\n[Your Name]" or similar
+    cleanedContent = cleanedContent.replace(/\n\n(Warm regards|Best regards|Sincerely|Kind regards|Regards|Thanks|Thank you|Cheers),?\s*\n+\[Your Name\].*$/s, '');
+    
+    // Pattern 2: Just "[Your Name]" at the end
+    cleanedContent = cleanedContent.replace(/\n+\[Your Name\].*$/s, '');
+    
+    // Pattern 3: "Warm regards," followed by anything at the end
+    cleanedContent = cleanedContent.replace(/\n\n(Warm regards|Best regards|Sincerely|Kind regards|Regards),?\s*$/s, '');
+    
+    // Trim any trailing whitespace
+    cleanedContent = cleanedContent.trim();
+    
+    // Now append the real signature
+    return cleanedContent + '\n\n' + signature.content;
+  }
+
+
   reset(): void {
     this.messages = [];
     this.lastGeneratedEmail = '';
@@ -927,6 +1103,7 @@ export class AppComponent implements OnInit, AfterViewChecked {
     this.selectedTone = '';
     this.selectedAudience = '';
     this.selectedTemplate = '';
+    // Keep selectedSignatureId - don't reset it so default stays selected
   }
 
   getAudienceIcon(audienceId: string): LucideIconData {

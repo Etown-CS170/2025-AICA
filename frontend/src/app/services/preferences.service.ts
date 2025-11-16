@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { BehaviorSubject, Observable, firstValueFrom } from 'rxjs';
-import { Tone, Audience, Template } from '../models/email.model';
+import { Tone, Audience, Template, Signature } from '../models/email.model';
 import { environment } from '../../environments/environment';
 
 export interface SavedEmail {
@@ -21,6 +21,7 @@ export interface UserPreferences {
   audiences: Audience[];
   templates: Template[];
   savedEmails: SavedEmail[];
+  signatures: Signature[];
   createdAt?: Date;
   updatedAt?: Date;
 }
@@ -37,12 +38,14 @@ export class PreferencesService {
   private audiencesSubject = new BehaviorSubject<Audience[]>([]);
   private templatesSubject = new BehaviorSubject<Template[]>([]);
   private savedEmailsSubject = new BehaviorSubject<SavedEmail[]>([]);
+  private signaturesSubject = new BehaviorSubject<Signature[]>([]);
   private loadingSubject = new BehaviorSubject<boolean>(false);
 
   public tones$ = this.tonesSubject.asObservable();
   public audiences$ = this.audiencesSubject.asObservable();
   public templates$ = this.templatesSubject.asObservable();
   public savedEmails$ = this.savedEmailsSubject.asObservable();
+  public signatures$ = this.signaturesSubject.asObservable();
   public loading$ = this.loadingSubject.asObservable();
 
   constructor(private http: HttpClient) {}
@@ -70,6 +73,7 @@ export class PreferencesService {
         this.audiencesSubject.next(response.data.audiences);
         this.templatesSubject.next(response.data.templates);
         this.savedEmailsSubject.next(response.data.savedEmails);
+        this.signaturesSubject.next(response.data.signatures || []);
         this.loadingSubject.next(false);
         return true;
       }
@@ -99,6 +103,14 @@ export class PreferencesService {
 
   getSavedEmails(): SavedEmail[] {
     return this.savedEmailsSubject.value;
+  }
+
+  getSignatures(): Signature[] {
+    return this.signaturesSubject.value;
+  }
+
+  getDefaultSignature(): Signature | undefined {
+    return this.signaturesSubject.value.find(s => s.isDefault);
   }
 
   // ==================== TONES ====================
@@ -438,6 +450,109 @@ export class PreferencesService {
     }
   }
 
+  // ==================== SIGNATURES ====================
+  
+  async updateSignatures(token: string, signatures: Signature[]): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.put<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/signatures`,
+          { signatures },
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.signaturesSubject.next(response.data.signatures);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to update signatures:', error);
+      return false;
+    }
+  }
+
+  async addSignature(token: string, signature: Signature): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.post<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/signatures`,
+          signature,
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.signaturesSubject.next(response.data.signatures);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to add signature:', error);
+      return false;
+    }
+  }
+
+  async deleteSignature(token: string, signatureId: string): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.delete<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/signatures/${signatureId}`,
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.signaturesSubject.next(response.data.signatures);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to delete signature:', error);
+      return false;
+    }
+  }
+
+  async setDefaultSignature(token: string, signatureId: string): Promise<boolean> {
+    try {
+      const headers = new HttpHeaders({
+        'Authorization': `Bearer ${token}`
+      });
+
+      const response = await firstValueFrom(
+        this.http.patch<{ success: boolean; data: UserPreferences }>(
+          `${this.apiUrl}/preferences/signatures/${signatureId}/default`,
+          {},
+          { headers }
+        )
+      );
+
+      if (response.success && response.data) {
+        this.signaturesSubject.next(response.data.signatures);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Failed to set default signature:', error);
+      return false;
+    }
+  }
+
   // ==================== RESET ====================
   
   async resetToDefaults(token: string): Promise<boolean> {
@@ -459,6 +574,7 @@ export class PreferencesService {
         this.audiencesSubject.next(response.data.audiences);
         this.templatesSubject.next(response.data.templates);
         this.savedEmailsSubject.next(response.data.savedEmails);
+        this.signaturesSubject.next(response.data.signatures || []);
         return true;
       }
       return false;
