@@ -20,22 +20,45 @@ For detailed guides, technical info, and step-by-step instructions, visit our wi
 
 ---
 
-## 🚀 Quick Start
+## Prerequisites
 
-### Navigate to project folder
+Before starting, ensure you have:
+- [Node.js](https://nodejs.org/) v18 or higher
+- [MongoDB](https://www.mongodb.com/try/download/community) (local) or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (cloud)
+- [OpenAI API Key](https://platform.openai.com/api-keys)
+- [Auth0 Account](https://auth0.com/)
+
+---
+
+## Quick Setup
+
+### 1. Clone & Navigate
+
 ```bash
+git clone https://github.com/Etown-CS170/2025-AICA.git
 cd 2025-AICA
 ```
 
-### Install all dependencies
+### 2. Install Dependencies
+
 ```bash
 npm run install:all
 ```
 
-### Set up environment variables
+This installs all dependencies for root, backend, and frontend.
 
-**Backend** - Create `backend/.env`:
-```bash
+### 3. Set Up Environment Variables
+
+#### Backend Configuration
+
+Create `backend/.env`:
+
+```env
+# Server Configuration
+PORT=3000
+NODE_ENV=development
+CORS_ORIGIN=http://localhost:4200
+
 # Auth0 Configuration
 AUTH0_DOMAIN=your-auth0-domain.auth0.com
 AUTH0_AUDIENCE=https://aica-backend-api
@@ -43,12 +66,21 @@ AUTH0_AUDIENCE=https://aica-backend-api
 # OpenAI Configuration
 OPENAI_API_KEY=sk-your-openai-api-key-here
 
-# Server Configuration
-PORT=3000
-CORS_ORIGIN=http://localhost:4200
+# MongoDB Configuration
+MONGODB_URI=mongodb://localhost:27017/aica
+# Or for MongoDB Atlas:
+# MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/aica
 ```
 
-**Frontend** - Update `frontend/src/environments/environment.ts`:
+**Get your credentials:**
+- **OpenAI API Key**: [OpenAI Dashboard](https://platform.openai.com/api-keys)
+- **Auth0 Domain & Audience**: [Auth0 Dashboard](https://manage.auth0.com/)
+- **MongoDB URI**: Local installation or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+
+#### Frontend Configuration
+
+Update `frontend/src/environments/environment.ts`:
+
 ```typescript
 export const environment = {
   production: false,
@@ -59,46 +91,87 @@ export const environment = {
     authorizationParams: {
       redirect_uri: window.location.origin,
       audience: 'https://aica-backend-api'
-    }
+    },
+    cacheLocation: 'localstorage' as const,
+    useRefreshTokens: true
   }
 };
 ```
 
-Get your API keys:
-- **OpenAI API Key** from the [OpenAI Dashboard](https://platform.openai.com/api-keys)
-- **Auth0 Credentials** from the [Auth0 Dashboard](https://manage.auth0.com/)
+**Replace placeholders:**
+- `your-auth0-domain` → Your Auth0 domain
+- `your-auth0-client-id` → Your Auth0 client ID
 
-⚠️ **Never commit your `.env` file or API keys to version control!**
+⚠️ **CRITICAL**: Never commit `.env` files or API keys to version control!
 
-### Start development servers
+### 4. Configure Auth0
+
+1. Create a **Single Page Application** in Auth0
+2. Set **Allowed Callback URLs**: `http://localhost:4200`
+3. Set **Allowed Logout URLs**: `http://localhost:4200`
+4. Set **Allowed Web Origins**: `http://localhost:4200`
+5. Create an **API** with identifier: `https://aica-backend-api`
+
+### 5. Start MongoDB
+
+**Local MongoDB:**
+```bash
+# macOS/Linux
+sudo systemctl start mongod
+
+# Or start via MongoDB Compass
+```
+
+**MongoDB Atlas:**
+- Ensure your cluster is running
+- Verify IP whitelist includes your current IP
+
+### 6. Start Development Servers
+
 ```bash
 npm run dev
 ```
 
-This will start both the backend (http://localhost:3000) and frontend (http://localhost:4200) concurrently.
+This starts both servers concurrently:
+- **Backend**: http://localhost:3000
+- **Frontend**: http://localhost:4200
+
+**Expected output:**
+```
+✅ MongoDB connected successfully
+🚀 AICA Backend Server running on port 3000
+📧 Environment: development
+```
 
 ---
 
-## 🛠️ Alternative Setup
+## Alternative Setup
 
-### Backend only
+### Backend Only
+
 ```bash
 cd backend
-```
-```bash
 npm install
-```
-```bash
 npm run dev
 ```
 
-### Frontend only
+### Frontend Only
+
 ```bash
 cd frontend
-```
-```bash
 npm install
-```
-```bash
 npm start
 ```
+
+---
+
+## Verify Installation
+
+1. Open browser to http://localhost:4200
+2. You should see the AICA login page
+3. Click **Sign In** to test Auth0 authentication
+4. After login, test email generation:
+   - Select a tone (Professional, Friendly, etc.)
+   - Select an audience (Professor, Student, etc.)
+   - Enter a prompt or use a template
+   - Click **Send** to generate an email
