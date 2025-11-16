@@ -138,8 +138,19 @@
             </button>
           </div>
           
-          <!-- Default Tone Buttons -->
-          <div *ngIf="!isCustomTone" class="space-y-2">
+          <!-- Minimized View - Show only selected tone -->
+          <div *ngIf="!isCustomTone && shouldMinimizeTones()" class="space-y-2">
+            <button
+              *ngFor="let tone of tones"
+              [hidden]="tone.id !== selectedTone"
+              (click)="toggleTone(tone.id)"
+              class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all bg-orange-500 text-white shadow-md">
+              {{ tone.label }}
+            </button>
+          </div>
+          
+          <!-- Expanded View - Show all tones -->
+          <div *ngIf="!isCustomTone && !shouldMinimizeTones()" class="space-y-2">
             <button
               *ngFor="let tone of tones"
               (click)="toggleTone(tone.id)"
@@ -185,8 +196,19 @@
             </button>
           </div>
           
-          <!-- Default Audience Buttons -->
-          <div *ngIf="!isCustomAudience" class="space-y-2">
+          <!-- Minimized View - Show only selected audience -->
+          <div *ngIf="!isCustomAudience && shouldMinimizeAudiences()" class="space-y-2">
+            <button
+              *ngFor="let audience of audiences"
+              [hidden]="audience.id !== selectedAudience"
+              (click)="toggleAudience(audience.id)"
+              class="w-full px-4 py-3 rounded-lg text-sm font-medium transition-all bg-purple-500 text-white shadow-md">
+              {{ audience.label }}
+            </button>
+          </div>
+          
+          <!-- Expanded View - Show all audiences -->
+          <div *ngIf="!isCustomAudience && !shouldMinimizeAudiences()" class="space-y-2">
             <button
               *ngFor="let audience of audiences"
               (click)="toggleAudience(audience.id)"
@@ -194,7 +216,6 @@
                 ? 'bg-purple-500 text-white shadow-md' 
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
               class="w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-all">
-              <lucide-icon [img]="getAudienceIcon(audience.id)" class="w-5 h-5"></lucide-icon>
               <span class="font-medium">{{ audience.label }}</span>
             </button>
           </div>
@@ -241,8 +262,19 @@
             </button>
           </div>
 
-          <!-- Default Template Buttons -->
-          <div *ngIf="!isCustomTemplate" class="space-y-2">
+          <!-- Minimized View - Show only selected template -->
+          <div *ngIf="!isCustomTemplate && shouldMinimizeTemplates()" class="space-y-2">
+            <button
+              *ngFor="let template of templates"
+              [hidden]="template.id !== selectedTemplate"
+              (click)="selectTemplate(template)"
+              class="w-full text-left px-4 py-2 rounded-lg text-sm transition-colors bg-green-500 text-white shadow-md">
+              {{ template.name }}
+            </button>
+          </div>
+
+          <!-- Expanded View - Show all templates -->
+          <div *ngIf="!isCustomTemplate && !shouldMinimizeTemplates()" class="space-y-2">
             <button
               *ngFor="let template of templates"
               (click)="selectTemplate(template)"
@@ -294,11 +326,25 @@
             </button>
           </div>
           
-          <!-- Default Signature Buttons -->
-          <div *ngIf="!isCustomSignature" class="space-y-2">
+          <!-- Minimized View - Show only selected signature or "No Signature" -->
+          <div *ngIf="!isCustomSignature && shouldMinimizeSignatures()" class="space-y-2">
             <button
               *ngFor="let signature of signatures"
-              (click)="selectedSignatureId = signature.id"
+              [hidden]="signature.id !== selectedSignatureId"
+              (click)="toggleSignature(signature.id)"
+              class="w-full text-left px-4 py-3 rounded-lg text-sm font-medium transition-all bg-yellow-500 text-white shadow-md">
+              <div class="flex items-center justify-between">
+                <span>{{ signature.name }}</span>
+                <span *ngIf="signature.isDefault" class="text-xs opacity-75">Default</span>
+              </div>
+            </button>
+          </div>
+          
+          <!-- Expanded View - Show all signatures -->
+          <div *ngIf="!isCustomSignature && !shouldMinimizeSignatures()" class="space-y-2">
+            <button
+              *ngFor="let signature of signatures"
+              (click)="toggleSignature(signature.id)"
               [class]="selectedSignatureId === signature.id 
                 ? 'bg-yellow-500 text-white shadow-md' 
                 : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'"
@@ -648,7 +694,6 @@
               <!-- View Mode -->
               <div *ngIf="editingAudienceId !== audience.id" class="flex items-center justify-between w-full">
                 <div class="flex items-center gap-3">
-                  <lucide-icon [img]="getAudienceIcon(audience.id)" class="w-5 h-5 text-purple-600 dark:text-purple-400"></lucide-icon>
                   <div>
                     <p class="font-medium text-gray-800 dark:text-white">{{ audience.label }}</p>
                     <p *ngIf="audience.description" class="text-xs text-gray-500 dark:text-gray-400">{{ audience.description }}</p>

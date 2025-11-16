@@ -380,6 +380,17 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.customAudience = '';
   }
 
+  toggleSignature(signatureId: string): void {
+  if (this.selectedSignatureId === signatureId) {
+    this.selectedSignatureId = '';
+  } else {
+    this.selectedSignatureId = signatureId;
+  }
+  this.isCustomSignature = false;
+  this.customSignatureName = '';
+  this.customSignatureContent = '';
+}
+
   getCurrentTone(): string {
     if (this.isCustomTone && this.customTone.trim()) {
       return this.customTone.trim().toLowerCase();
@@ -1128,7 +1139,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     return cleanedContent + '\n\n' + customSignature;
   }
 
-  reset(): void {
+reset(): void {
     this.messages = [];
     this.lastGeneratedEmail = '';
     this.inputText = '';
@@ -1152,14 +1163,21 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.selectedTemplate = '';
   }
 
-  getAudienceIcon(audienceId: string): LucideIconData {
-    const iconMap: Record<string, LucideIconData> = {
-      'professor': this.GraduationCap,
-      'student': this.User,
-      'coach': this.Users,
-      'professional': this.Briefcase
-    };
-    return iconMap[audienceId] || this.User;
+  // Minimization logic for home page sections
+  shouldMinimizeTones(): boolean {
+    return this.selectedTone !== '' && !this.isCustomTone;
+  }
+
+  shouldMinimizeAudiences(): boolean {
+    return this.selectedAudience !== '' && !this.isCustomAudience;
+  }
+
+  shouldMinimizeTemplates(): boolean {
+    return this.selectedTemplate !== '' && !this.isCustomTemplate;
+  }
+
+  shouldMinimizeSignatures(): boolean {
+    return this.selectedSignatureId !== '' && !this.isCustomSignature;
   }
 
   onKeyPress(event: KeyboardEvent): void {
