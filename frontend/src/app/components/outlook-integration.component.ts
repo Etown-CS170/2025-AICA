@@ -190,6 +190,11 @@ export class OutlookIntegrationComponent implements OnInit {
     // Pre-fill email content
     this.emailBody = this.emailContent;
 
+    // Auto-open send form if email content is provided
+    if (this.emailContent) {
+      this.showSendForm = true;
+    }
+
     // Get Auth0 token and check connection status
     try {
       this.isCheckingStatus = true;
