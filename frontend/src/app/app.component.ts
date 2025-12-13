@@ -220,9 +220,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
           next: async (token) => {
             this.accessToken = token;
             const success = await this.preferencesService.loadUserPreferences(token);
-            if (!success) {
-              console.log('⚠️ Failed to load preferences, using defaults');
-            }
+            // if (!success) {
+            //   console.log('⚠️ Failed to load preferences, using defaults');
+            // }
 
             // Check Outlook connection status
             await this.outlookService.checkConnectionStatus(token);
@@ -260,9 +260,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.showSettingsModal = !this.showSettingsModal;
     
     if (this.showSettingsModal && this.accessToken) {
-      console.log('🔍 Checking Outlook status from settings modal...');
+      // console.log('🔍 Checking Outlook status from settings modal...');
       await this.outlookService.checkConnectionStatus(this.accessToken);
-      console.log('📊 Status after check:', this.outlookService.getCurrentStatus());
+      // console.log('📊 Status after check:', this.outlookService.getCurrentStatus());
     }
   }
 
