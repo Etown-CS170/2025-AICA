@@ -29,8 +29,8 @@ import { OutlookService } from './services/outlook.service';
     CommonModule, 
     FormsModule, 
     LucideAngularModule,
-    RouterOutlet,  // NEW
-    OutlookIntegrationComponent  // NEW
+    RouterOutlet,
+    OutlookIntegrationComponent
   ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
@@ -85,9 +85,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   editingSignatureId: string | null = null;
   editingSignatureName: string = '';
   editingSignatureContent: string = '';
-  isCustomSignature: boolean = false; // NEW: Add this line
-  customSignatureName: string = ''; // NEW: Add this line
-  customSignatureContent: string = ''; // NEW: Add this line
+  isCustomSignature: boolean = false;
+  customSignatureName: string = '';
+  customSignatureContent: string = '';
 
   // Component state
   messages: Message[] = [];
@@ -373,7 +373,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // NEW: Add this method
   toggleCustomSignature(): void {
     this.isCustomSignature = !this.isCustomSignature;
     if (this.isCustomSignature) {
@@ -462,7 +461,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   getCurrentSignature(): string {
-    // NEW: Update this method to handle custom signatures
     if (this.isCustomSignature && this.customSignatureName.trim()) {
       return this.customSignatureName.trim().toLowerCase();
     }
@@ -516,7 +514,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       if (response.success && response.email) {
         let emailContent = response.email;
         
-        // NEW: Apply custom or saved signature
+        // Apply custom or saved signature
         if (this.isCustomSignature && this.customSignatureContent.trim()) {
           emailContent = this.applyCustomSignatureToEmail(emailContent, this.customSignatureContent);
         } else if (this.selectedSignatureId) {
@@ -666,7 +664,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // NEW: Add this method to save custom signature
   async saveCustomSignature(): Promise<void> {
     if (!this.accessToken || !this.customSignatureName.trim() || !this.customSignatureContent.trim()) return;
 
@@ -1168,7 +1165,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     return cleanedContent + '\n\n' + signature.content;
   }
 
-  // NEW: Add this method for custom signatures
   applyCustomSignatureToEmail(emailContent: string, customSignature: string): string {
     let cleanedContent = emailContent;
     

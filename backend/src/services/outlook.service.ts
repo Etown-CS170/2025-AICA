@@ -37,20 +37,23 @@ class OutlookService {
    * Exchange authorization code for access token
    */
   async getAccessToken(code: string): Promise<OutlookTokens> {
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
     const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
-    if (!clientSecret) {
-      throw new Error('MICROSOFT_CLIENT_SECRET environment variable is not set. Please configure it before running the application.');
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET environment variables must be set');
     }
+    
     try {
       const tokenEndpoint = `https://login.microsoftonline.com/common/oauth2/v2.0/token`;
       
       const params = new URLSearchParams({
-        client_id: process.env.MICROSOFT_CLIENT_ID || '',
+        client_id: clientId,
         client_secret: clientSecret,
         code: code,
         redirect_uri: process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:4200/outlook/callback',
         grant_type: 'authorization_code',
-        scope: 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read offline_access'  // Added User.Read
+        scope: 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read offline_access'
       });
 
       const response = await axios.post(tokenEndpoint, params.toString(), {
@@ -70,15 +73,22 @@ class OutlookService {
    * Refresh access token using refresh token
    */
   async refreshAccessToken(refreshToken: string): Promise<OutlookTokens> {
+    const clientId = process.env.MICROSOFT_CLIENT_ID;
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
+    
+    if (!clientId || !clientSecret) {
+      throw new Error('MICROSOFT_CLIENT_ID and MICROSOFT_CLIENT_SECRET environment variables must be set');
+    }
+    
     try {
       const tokenEndpoint = `https://login.microsoftonline.com/common/oauth2/v2.0/token`;
       
       const params = new URLSearchParams({
-        client_id: process.env.MICROSOFT_CLIENT_ID || '',
-        client_secret: process.env.MICROSOFT_CLIENT_SECRET || '',
+        client_id: clientId,
+        client_secret: clientSecret,
         refresh_token: refreshToken,
         grant_type: 'refresh_token',
-        scope: 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read offline_access'  // Added User.Read
+        scope: 'https://graph.microsoft.com/Mail.Send https://graph.microsoft.com/Mail.Read https://graph.microsoft.com/User.Read offline_access'
       });
 
       const response = await axios.post(tokenEndpoint, params.toString(), {

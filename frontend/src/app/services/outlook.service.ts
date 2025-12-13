@@ -81,8 +81,11 @@ export class OutlookService {
    * Generate random state for OAuth security
    */
   private generateRandomState(): string {
-    return Math.random().toString(36).substring(2, 15) + 
-           Math.random().toString(36).substring(2, 15);
+    // Generate a cryptographically secure random string for OAuth state -- 128 bits
+    const array = new Uint8Array(16);
+    window.crypto.getRandomValues(array);
+    // Convert to base64url string
+    return Array.from(array, b => ('0' + b.toString(16)).slice(-2)).join('');
   }
 
   /**

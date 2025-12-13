@@ -41,9 +41,13 @@ class OutlookController {
     }
 
     let accessToken = tokenDoc.accessToken;
-    
+
+    // Refresh token 5 minutes before expiry to avoid race conditions
+    const EXPIRY_BUFFER_MS = 5 * 60 * 1000; // 5 minutes
+    const expiryWithBuffer = new Date(tokenDoc.expiresAt.getTime() - EXPIRY_BUFFER_MS);
+  
     // Check if token is expired and refresh if needed
-    if (new Date() >= tokenDoc.expiresAt) {
+    if (new Date() >= expiryWithBuffer) {
       const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
       accessToken = newTokens.access_token;
 
