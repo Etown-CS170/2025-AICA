@@ -28,20 +28,19 @@ Before starting, ensure you have:
 - [MongoDB](https://www.mongodb.com/try/download/community) (local) or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas) (cloud)
 - [OpenAI API Key](https://platform.openai.com/api-keys)
 - [Auth0 Account](https://auth0.com/)
+- [Microsoft Azure Account](https://azure.microsoft.com/) (optional, for Outlook integration)
 
 ---
 
 ## Quick Setup
 
 ### 1. Clone & Navigate
-
 ```bash
 git clone https://github.com/Etown-CS170/2025-AICA.git
 cd 2025-AICA
 ```
 
 ### 2. Install Dependencies
-
 ```bash
 npm run install:all
 ```
@@ -52,8 +51,13 @@ This installs all dependencies for root, backend, and frontend.
 
 #### Backend Configuration
 
-Create `backend/.env`:
+Copy the example environment file and configure it:
+```bash
+cd backend
+cp .env.example .env
+```
 
+Then edit `backend/.env` with your credentials:
 ```env
 # Server Configuration
 PORT=3000
@@ -71,17 +75,22 @@ OPENAI_API_KEY=sk-your-openai-api-key-here
 MONGODB_URI=mongodb://localhost:27017/aica
 # Or for MongoDB Atlas:
 # MONGODB_URI=mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/aica
+
+# Microsoft Outlook Configuration (Optional)
+MICROSOFT_CLIENT_ID=your-microsoft-client-id
+MICROSOFT_CLIENT_SECRET=your-microsoft-client-secret
+MICROSOFT_REDIRECT_URI=http://localhost:4200/outlook/callback
 ```
 
 **Get your credentials:**
 - **OpenAI API Key**: [OpenAI Dashboard](https://platform.openai.com/api-keys)
 - **Auth0 Domain & Audience**: [Auth0 Dashboard](https://manage.auth0.com/)
 - **MongoDB URI**: Local installation or [MongoDB Atlas](https://www.mongodb.com/cloud/atlas)
+- **Microsoft Client ID & Secret**: [Azure Portal](https://portal.azure.com/) (optional)
 
 #### Frontend Configuration
 
 Update `frontend/src/environments/environment.ts`:
-
 ```typescript
 export const environment = {
   production: false,
@@ -95,6 +104,11 @@ export const environment = {
     },
     cacheLocation: 'localstorage' as const,
     useRefreshTokens: true
+  },
+  microsoft: {
+    clientId: 'your-microsoft-client-id',
+    redirectUri: 'http://localhost:4200/outlook/callback',
+    tenantId: 'common'
   }
 };
 ```
@@ -102,6 +116,7 @@ export const environment = {
 **Replace placeholders:**
 - `your-auth0-domain` → Your Auth0 domain
 - `your-auth0-client-id` → Your Auth0 client ID
+- `your-microsoft-client-id` → Your Microsoft client ID (optional)
 
 ⚠️ **CRITICAL**: Never commit `.env` files or API keys to version control!
 
@@ -113,7 +128,20 @@ export const environment = {
 4. Set **Allowed Web Origins**: `http://localhost:4200`
 5. Create an **API** with identifier: `https://aica-backend-api`
 
-### 5. Start MongoDB
+### 5. Configure Microsoft Outlook Integration (Optional)
+
+1. Go to [Azure Portal](https://portal.azure.com/)
+2. Navigate to **App registrations** → **New registration**
+3. Set **Redirect URI**: `http://localhost:4200/outlook/callback`
+4. Under **API permissions**, add:
+   - `Mail.Send`
+   - `Mail.Read`
+   - `User.Read`
+   - `offline_access`
+5. Under **Certificates & secrets**, create a **New client secret**
+6. Copy the **Application (client) ID** and **Client secret value**
+
+### 6. Start MongoDB
 
 **Local MongoDB:**
 ```bash
@@ -127,8 +155,7 @@ sudo systemctl start mongod
 - Ensure your cluster is running
 - Verify IP whitelist includes your current IP
 
-### 6. Start Development Servers
-
+### 7. Start Development Servers
 ```bash
 npm run dev
 ```
@@ -149,7 +176,6 @@ This starts both servers concurrently:
 ## Alternative Setup
 
 ### Backend Only
-
 ```bash
 cd backend
 npm install
@@ -157,7 +183,6 @@ npm run dev
 ```
 
 ### Frontend Only
-
 ```bash
 cd frontend
 npm install
@@ -176,3 +201,9 @@ npm start
    - Select an audience (Professor, Student, etc.)
    - Enter a prompt or use a template
    - Click **Send** to generate an email
+5. **(Optional)** Test Outlook integration:
+   - Click the **Settings** icon (⚙️)
+   - Navigate to **Outlook Integration** section
+   - Click **Connect Outlook**
+   - Authorize AICA to access your Outlook account
+   - Generate an email and click **Send via Outlook**
