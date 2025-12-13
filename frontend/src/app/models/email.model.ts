@@ -1,7 +1,7 @@
 export interface EmailRequest {
   prompt: string;
-  tone: string; // Changed from ToneType to allow custom values
-  audience: string; // Changed from AudienceType to allow custom values
+  tone: string;
+  audience: string;
 }
 
 export interface EmailResponse {
@@ -19,14 +19,14 @@ export type ToneType = 'professional' | 'friendly' | 'formal' | 'persuasive';
 export type AudienceType = 'professor' | 'student' | 'coach' | 'professional';
 
 export interface Tone {
-  id: string; // Changed from ToneType to string to allow custom IDs
+  id: string;
   label: string;
   color: string;
   description?: string;
 }
 
 export interface Audience {
-  id: string; // Changed from AudienceType to string to allow custom IDs
+  id: string;
   label: string;
   icon: string;
   description?: string;
@@ -36,7 +36,7 @@ export interface Template {
   id: string;
   name: string;
   prompt: string;
-  isCustom?: boolean; // Added to identify custom templates
+  isCustom?: boolean;
 }
 
 export interface Message {
@@ -45,7 +45,7 @@ export interface Message {
   content: string;
   tone?: string;
   audience?: string;
-  signature?: string;  // NEW: Add this line
+  signature?: string;
   timestamp: Date;
 }
 

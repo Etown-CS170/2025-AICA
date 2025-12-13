@@ -24,7 +24,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Logging middleware (optional)
 app.use((req: Request, res: Response, next: NextFunction) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
+  // console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
   next();
 });
 

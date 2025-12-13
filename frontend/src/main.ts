@@ -17,7 +17,6 @@ bootstrapApplication(AppComponent, {
       authorizationParams: environment.auth0.authorizationParams,
       cacheLocation: environment.auth0.cacheLocation,
       useRefreshTokens: environment.auth0.useRefreshTokens,
-      // FIX: Skip Auth0 redirect callback on Outlook callback route
       skipRedirectCallback: (window.location.pathname === '/outlook/callback'),
       httpInterceptor: {
         allowedList: [

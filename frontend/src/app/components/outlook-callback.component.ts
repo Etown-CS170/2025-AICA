@@ -52,9 +52,6 @@ import { firstValueFrom } from 'rxjs';
     </div>
   `
 })
-// Also ensure your main.ts has skipRedirectCallback properly configured:
-// skipRedirectCallback: (window.location.pathname === '/outlook/callback')
-
 export class OutlookCallbackComponent implements OnInit {
   isProcessing: boolean = true;
   error: string = '';
@@ -75,7 +72,6 @@ export class OutlookCallbackComponent implements OnInit {
 
   private async handleCallback(): Promise<void> {
     try {
-      console.log('🔍 Starting Outlook OAuth callback handler');
       this.debugMessage = 'Checking callback parameters...';
       
       // Get code and state from query params
@@ -83,15 +79,6 @@ export class OutlookCallbackComponent implements OnInit {
       const state = this.route.snapshot.queryParamMap.get('state');
       const errorParam = this.route.snapshot.queryParamMap.get('error');
       const errorDescription = this.route.snapshot.queryParamMap.get('error_description');
-
-      console.log('📝 Callback params:', { 
-        hasCode: !!code,
-        codeLength: code?.length || 0,
-        hasState: !!state,
-        stateLength: state?.length || 0,
-        error: errorParam,
-        errorDescription 
-      });
 
       // Store debug info
       this.debugInfo = JSON.stringify({
@@ -106,23 +93,20 @@ export class OutlookCallbackComponent implements OnInit {
 
       // Check for OAuth error
       if (errorParam) {
-        console.error('❌ OAuth error from Microsoft:', errorParam, errorDescription);
         this.isProcessing = false;
         this.error = errorDescription || 'Authentication failed. Please try again.';
         return;
       }
 
       if (!code || !state) {
-        console.error('❌ Missing code or state parameter');
         this.isProcessing = false;
         this.error = 'Invalid callback parameters. Please try connecting again.';
         return;
       }
 
-      console.log('✅ Code and state received');
       this.debugMessage = 'Checking authentication status...';
 
-      // FIX: Use firstValueFrom with a timeout to prevent infinite waiting
+      // Use firstValueFrom with a timeout to prevent infinite waiting
       let isAuthenticated = false;
       try {
         isAuthenticated = await Promise.race([
@@ -130,24 +114,19 @@ export class OutlookCallbackComponent implements OnInit {
           new Promise<boolean>((resolve) => setTimeout(() => resolve(false), 5000))
         ]);
       } catch (authError) {
-        console.warn('⚠️ Auth check timeout, proceeding anyway:', authError);
         isAuthenticated = false;
       }
-      
-      console.log('🔐 Auth0 authentication status:', isAuthenticated);
 
       if (!isAuthenticated) {
-        console.error('❌ User not authenticated with Auth0');
         this.isProcessing = false;
         this.error = 'Please sign in to AICA first before connecting Outlook.';
         setTimeout(() => this.router.navigate(['/']), 3000);
         return;
       }
 
-      console.log('✅ User is authenticated with Auth0');
       this.debugMessage = 'Getting access token...';
 
-      // FIX: Get Auth0 token with better error handling and timeout
+      // Get Auth0 token with better error handling and timeout
       let token: string | undefined;
       try {
         token = await Promise.race([
@@ -161,13 +140,10 @@ export class OutlookCallbackComponent implements OnInit {
             setTimeout(() => reject(new Error('Token fetch timeout')), 10000)
           )
         ]);
-        
-        console.log('✅ Got Auth0 access token:', token ? 'Token received' : 'No token');
       } catch (tokenError: any) {
-        console.error('❌ Token error:', tokenError);
         this.debugInfo += '\n\nToken Error: ' + JSON.stringify(tokenError, null, 2);
         
-        // FIX: Try to continue anyway if we have a cached token
+        // Try to continue anyway if we have a cached token
         try {
           token = await firstValueFrom(this.auth.getAccessTokenSilently({
             authorizationParams: {
@@ -191,42 +167,33 @@ export class OutlookCallbackComponent implements OnInit {
       }
 
       if (!token) {
-        console.error('❌ No token received from Auth0');
         this.isProcessing = false;
         this.error = 'Authentication required. Please sign in first.';
         setTimeout(() => this.router.navigate(['/']), 3000);
         return;
       }
 
-      console.log('🔄 Exchanging authorization code for tokens...');
       this.debugMessage = 'Exchanging code for tokens...';
 
       // Exchange code for tokens
       const success = await this.outlookService.handleOAuthCallback(code, state, token);
 
-      console.log('📊 Exchange result:', success ? 'SUCCESS ✅' : 'FAILED ❌');
-
       this.isProcessing = false;
 
       if (success) {
-        console.log('🎉 Outlook successfully connected!');
         this.success = true;
         this.debugMessage = 'Connection successful!';
         
         // Force a connection status check before redirecting
-        console.log('🔄 Checking connection status...');
         await this.outlookService.checkConnectionStatus(token);
         
         // Redirect to home after 2 seconds
-        console.log('🏠 Redirecting to home in 2 seconds...');
         setTimeout(() => this.router.navigate(['/']), 2000);
       } else {
-        console.error('❌ Failed to connect to Outlook');
         this.error = 'Failed to connect to Outlook. Please try again.';
         this.debugInfo += '\n\nExchange failed - check backend logs for more details';
       }
     } catch (error: any) {
-      console.error('❌ Unexpected callback error:', error);
       this.isProcessing = false;
       this.error = 'An unexpected error occurred. Please try again.';
       this.debugInfo += '\n\nUnexpected Error: ' + JSON.stringify({
@@ -238,7 +205,6 @@ export class OutlookCallbackComponent implements OnInit {
   }
 
   goHome(): void {
-    console.log('🏠 Navigating to home');
     this.router.navigate(['/']);
   }
 }

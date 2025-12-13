@@ -12,10 +12,10 @@ class OutlookController {
       const { code } = req.body;
       const userId = (req as any).auth?.payload?.sub;
 
-      console.log('🔍 [AUTH CALLBACK] Starting callback handler');
-      console.log('🔍 [AUTH CALLBACK] User ID:', userId);
-      console.log('🔍 [AUTH CALLBACK] Code received:', code ? 'Yes' : 'No');
-      console.log('🔍 [AUTH CALLBACK] Full auth object:', JSON.stringify((req as any).auth, null, 2));
+      // console.log('🔍 [AUTH CALLBACK] Starting callback handler');
+      // console.log('🔍 [AUTH CALLBACK] User ID:', userId);
+      // console.log('🔍 [AUTH CALLBACK] Code received:', code ? 'Yes' : 'No');
+      // console.log('🔍 [AUTH CALLBACK] Full auth object:', JSON.stringify((req as any).auth, null, 2));
 
       if (!userId) {
         console.error('❌ [AUTH CALLBACK] No user ID found in token');
@@ -35,14 +35,14 @@ class OutlookController {
         return;
       }
 
-      console.log('📞 [AUTH CALLBACK] Exchanging code for tokens...');
+      // console.log('📞 [AUTH CALLBACK] Exchanging code for tokens...');
       const tokens = await outlookService.getAccessToken(code);
-      console.log('✅ [AUTH CALLBACK] Tokens received from Microsoft');
+      // console.log('✅ [AUTH CALLBACK] Tokens received from Microsoft');
 
       // Store tokens in database
-      console.log('💾 [AUTH CALLBACK] Saving tokens to database...');
-      console.log('💾 [AUTH CALLBACK] userId:', userId);
-      console.log('💾 [AUTH CALLBACK] Token expiry:', new Date(Date.now() + tokens.expires_in * 1000));
+      // console.log('💾 [AUTH CALLBACK] Saving tokens to database...');
+      // console.log('💾 [AUTH CALLBACK] userId:', userId);
+      // console.log('💾 [AUTH CALLBACK] Token expiry:', new Date(Date.now() + tokens.expires_in * 1000));
 
       const savedTokens = await OutlookTokens.findOneAndUpdate(
         { userId },
@@ -55,16 +55,16 @@ class OutlookController {
         { upsert: true, new: true }
       );
 
-      console.log('✅ [AUTH CALLBACK] Tokens saved successfully');
-      console.log('✅ [AUTH CALLBACK] Saved document ID:', savedTokens._id);
-      console.log('✅ [AUTH CALLBACK] Saved for userId:', savedTokens.userId);
+      // console.log('✅ [AUTH CALLBACK] Tokens saved successfully');
+      // console.log('✅ [AUTH CALLBACK] Saved document ID:', savedTokens._id);
+      // console.log('✅ [AUTH CALLBACK] Saved for userId:', savedTokens.userId);
 
       // Immediately verify the save
       const verifyTokens = await OutlookTokens.findOne({ userId });
-      console.log('🔍 [AUTH CALLBACK] Verification check - tokens found:', verifyTokens ? 'Yes' : 'No');
-      if (verifyTokens) {
-        console.log('🔍 [AUTH CALLBACK] Verification - document ID:', verifyTokens._id);
-      }
+      // console.log('🔍 [AUTH CALLBACK] Verification check - tokens found:', verifyTokens ? 'Yes' : 'No');
+      // if (verifyTokens) {
+      //   console.log('🔍 [AUTH CALLBACK] Verification - document ID:', verifyTokens._id);
+      // }
 
       res.status(200).json({
         success: true,
@@ -89,9 +89,9 @@ class OutlookController {
     try {
       const userId = (req as any).auth?.payload?.sub;
 
-      console.log('🔍 [STATUS] Starting status check');
-      console.log('🔍 [STATUS] User ID:', userId);
-      console.log('🔍 [STATUS] Full auth object:', JSON.stringify((req as any).auth, null, 2));
+      // console.log('🔍 [STATUS] Starting status check');
+      // console.log('🔍 [STATUS] User ID:', userId);
+      // console.log('🔍 [STATUS] Full auth object:', JSON.stringify((req as any).auth, null, 2));
 
       if (!userId) {
         console.error('❌ [STATUS] No user ID found in token');
@@ -102,19 +102,19 @@ class OutlookController {
         return;
       }
 
-      console.log('🔍 [STATUS] Searching for tokens in database...');
+      // console.log('🔍 [STATUS] Searching for tokens in database...');
       const tokenDoc = await OutlookTokens.findOne({ userId });
-      console.log('🔍 [STATUS] Token document found:', tokenDoc ? 'Yes' : 'No');
+      // console.log('🔍 [STATUS] Token document found:', tokenDoc ? 'Yes' : 'No');
 
       if (!tokenDoc) {
         // Let's also check if ANY tokens exist
         const allTokens = await OutlookTokens.find({});
-        console.log('🔍 [STATUS] Total tokens in database:', allTokens.length);
-        if (allTokens.length > 0) {
-          console.log('🔍 [STATUS] Available userIds in database:', allTokens.map(t => t.userId));
-        }
+        // console.log('🔍 [STATUS] Total tokens in database:', allTokens.length);
+        // if (allTokens.length > 0) {
+        //   console.log('🔍 [STATUS] Available userIds in database:', allTokens.map(t => t.userId));
+        // }
 
-        console.log('❌ [STATUS] No tokens found for this user');
+        // console.log('❌ [STATUS] No tokens found for this user');
         res.status(200).json({
           success: true,
           connected: false
@@ -122,15 +122,15 @@ class OutlookController {
         return;
       }
 
-      console.log('✅ [STATUS] Token document found');
-      console.log('🔍 [STATUS] Token expires at:', tokenDoc.expiresAt);
-      console.log('🔍 [STATUS] Token expired:', new Date() >= tokenDoc.expiresAt);
+      // console.log('✅ [STATUS] Token document found');
+      // console.log('🔍 [STATUS] Token expires at:', tokenDoc.expiresAt);
+      // console.log('🔍 [STATUS] Token expired:', new Date() >= tokenDoc.expiresAt);
 
       // Try to get user profile to verify token is valid
       try {
         let accessToken = tokenDoc.accessToken;
         if (new Date() >= tokenDoc.expiresAt) {
-          console.log('🔄 [STATUS] Token expired, refreshing...');
+          // console.log('🔄 [STATUS] Token expired, refreshing...');
           const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
           accessToken = newTokens.access_token;
 
@@ -142,12 +142,12 @@ class OutlookController {
               expiresAt: new Date(Date.now() + newTokens.expires_in * 1000)
             }
           );
-          console.log('✅ [STATUS] Token refreshed successfully');
+          // console.log('✅ [STATUS] Token refreshed successfully');
         }
 
-        console.log('📞 [STATUS] Fetching user profile from Microsoft...');
+        // console.log('📞 [STATUS] Fetching user profile from Microsoft...');
         const profile = await outlookService.getUserProfile(accessToken);
-        console.log('✅ [STATUS] Profile retrieved:', profile.mail || profile.userPrincipalName);
+        // console.log('✅ [STATUS] Profile retrieved:', profile.mail || profile.userPrincipalName);
 
         res.status(200).json({
           success: true,
@@ -159,7 +159,7 @@ class OutlookController {
         console.error('❌ [STATUS] Error validating token:', error);
         // Token is invalid, delete it
         await OutlookTokens.findOneAndDelete({ userId });
-        console.log('🗑️ [STATUS] Invalid token deleted');
+        // console.log('🗑️ [STATUS] Invalid token deleted');
         
         res.status(200).json({
           success: true,

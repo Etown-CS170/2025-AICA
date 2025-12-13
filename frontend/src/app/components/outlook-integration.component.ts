@@ -207,14 +207,10 @@ export class OutlookIntegrationComponent implements OnInit {
       this.accessToken = token;
       
       // Check connection status immediately on init
-      console.log('🔄 Checking Outlook connection status on init...');
       await this.outlookService.checkConnectionStatus(token);
       
-      const status = this.outlookService.getCurrentStatus();
-      console.log('📊 Current Outlook status:', status);
-      
     } catch (err) {
-      console.error('❌ Token error:', err);
+      // Silent failure - user will see connection button
     } finally {
       this.isCheckingStatus = false;
     }
