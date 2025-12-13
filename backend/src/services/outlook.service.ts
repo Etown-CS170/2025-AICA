@@ -37,12 +37,16 @@ class OutlookService {
    * Exchange authorization code for access token
    */
   async getAccessToken(code: string): Promise<OutlookTokens> {
+    const clientSecret = process.env.MICROSOFT_CLIENT_SECRET;
+    if (!clientSecret) {
+      throw new Error('MICROSOFT_CLIENT_SECRET environment variable is not set. Please configure it before running the application.');
+    }
     try {
       const tokenEndpoint = `https://login.microsoftonline.com/common/oauth2/v2.0/token`;
       
       const params = new URLSearchParams({
         client_id: process.env.MICROSOFT_CLIENT_ID || '',
-        client_secret: process.env.MICROSOFT_CLIENT_SECRET || '',
+        client_secret: clientSecret,
         code: code,
         redirect_uri: process.env.MICROSOFT_REDIRECT_URI || 'http://localhost:4200/outlook/callback',
         grant_type: 'authorization_code',

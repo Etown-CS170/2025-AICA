@@ -220,9 +220,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
           next: async (token) => {
             this.accessToken = token;
             const success = await this.preferencesService.loadUserPreferences(token);
-            // if (!success) {
-            //   console.log('⚠️ Failed to load preferences, using defaults');
-            // }
+            if (!success) {
+              console.log('⚠️ Failed to load preferences, using defaults');
+            }
 
             // Check Outlook connection status
             await this.outlookService.checkConnectionStatus(token);

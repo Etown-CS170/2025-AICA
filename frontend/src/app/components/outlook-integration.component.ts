@@ -317,11 +317,13 @@ export class OutlookIntegrationComponent implements OnInit {
 
   private showMessage(message: string, type: 'success' | 'error'): void {
     if (type === 'success') {
+      // Match form close time
       this.successMessage = message;
-      setTimeout(() => this.successMessage = '', 5000);
+      setTimeout(() => this.successMessage = '', 2000);
     } else {
+      // Shorter for errors
       this.errorMessage = message;
-      setTimeout(() => this.errorMessage = '', 5000);
+      setTimeout(() => this.errorMessage = '', 3000);
     }
   }
 

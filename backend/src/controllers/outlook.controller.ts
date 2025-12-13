@@ -4,18 +4,71 @@ import { OutlookTokens } from '../models/outlook-tokens.model';
 
 class OutlookController {
   /**
+   * Extract userId from authenticated request
+   */
+  private getUserId(req: Request): string | null {
+    const auth = (req as any).auth;
+    return auth?.payload?.sub || null;
+  }
+
+  /**
+   * Validate email format
+   */
+  private isValidEmail(email: string): boolean {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  }
+
+  /**
+   * Validate array of email addresses
+   */
+  private validateEmailArray(emails: string[]): { valid: boolean; invalidEmails: string[] } {
+    const invalidEmails = emails.filter(email => !this.isValidEmail(email));
+    return {
+      valid: invalidEmails.length === 0,
+      invalidEmails
+    };
+  }
+
+  /**
+   * Get valid access token for user, refreshing if necessary
+   */
+  private async getValidAccessToken(userId: string): Promise<string> {
+    const tokenDoc = await OutlookTokens.findOne({ userId });
+
+    if (!tokenDoc) {
+      throw new Error('Outlook not connected');
+    }
+
+    let accessToken = tokenDoc.accessToken;
+    
+    // Check if token is expired and refresh if needed
+    if (new Date() >= tokenDoc.expiresAt) {
+      const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
+      accessToken = newTokens.access_token;
+
+      // Update stored tokens
+      await OutlookTokens.findOneAndUpdate(
+        { userId },
+        {
+          accessToken: newTokens.access_token,
+          refreshToken: newTokens.refresh_token || tokenDoc.refreshToken,
+          expiresAt: new Date(Date.now() + newTokens.expires_in * 1000)
+        }
+      );
+    }
+
+    return accessToken;
+  }
+
+  /**
    * Exchange authorization code for tokens
    * POST /api/outlook/auth/callback
    */
   async handleAuthCallback(req: Request, res: Response): Promise<void> {
     try {
       const { code } = req.body;
-      const userId = (req as any).auth?.payload?.sub;
-
-      // console.log('🔍 [AUTH CALLBACK] Starting callback handler');
-      // console.log('🔍 [AUTH CALLBACK] User ID:', userId);
-      // console.log('🔍 [AUTH CALLBACK] Code received:', code ? 'Yes' : 'No');
-      // console.log('🔍 [AUTH CALLBACK] Full auth object:', JSON.stringify((req as any).auth, null, 2));
+      const userId = this.getUserId(req);
 
       if (!userId) {
         console.error('❌ [AUTH CALLBACK] No user ID found in token');
@@ -35,16 +88,10 @@ class OutlookController {
         return;
       }
 
-      // console.log('📞 [AUTH CALLBACK] Exchanging code for tokens...');
       const tokens = await outlookService.getAccessToken(code);
-      // console.log('✅ [AUTH CALLBACK] Tokens received from Microsoft');
 
       // Store tokens in database
-      // console.log('💾 [AUTH CALLBACK] Saving tokens to database...');
-      // console.log('💾 [AUTH CALLBACK] userId:', userId);
-      // console.log('💾 [AUTH CALLBACK] Token expiry:', new Date(Date.now() + tokens.expires_in * 1000));
-
-      const savedTokens = await OutlookTokens.findOneAndUpdate(
+      await OutlookTokens.findOneAndUpdate(
         { userId },
         {
           userId,
@@ -54,17 +101,6 @@ class OutlookController {
         },
         { upsert: true, new: true }
       );
-
-      // console.log('✅ [AUTH CALLBACK] Tokens saved successfully');
-      // console.log('✅ [AUTH CALLBACK] Saved document ID:', savedTokens._id);
-      // console.log('✅ [AUTH CALLBACK] Saved for userId:', savedTokens.userId);
-
-      // Immediately verify the save
-      const verifyTokens = await OutlookTokens.findOne({ userId });
-      // console.log('🔍 [AUTH CALLBACK] Verification check - tokens found:', verifyTokens ? 'Yes' : 'No');
-      // if (verifyTokens) {
-      //   console.log('🔍 [AUTH CALLBACK] Verification - document ID:', verifyTokens._id);
-      // }
 
       res.status(200).json({
         success: true,
@@ -87,11 +123,7 @@ class OutlookController {
    */
   async getConnectionStatus(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).auth?.payload?.sub;
-
-      // console.log('🔍 [STATUS] Starting status check');
-      // console.log('🔍 [STATUS] User ID:', userId);
-      // console.log('🔍 [STATUS] Full auth object:', JSON.stringify((req as any).auth, null, 2));
+      const userId = this.getUserId(req);
 
       if (!userId) {
         console.error('❌ [STATUS] No user ID found in token');
@@ -102,19 +134,9 @@ class OutlookController {
         return;
       }
 
-      // console.log('🔍 [STATUS] Searching for tokens in database...');
       const tokenDoc = await OutlookTokens.findOne({ userId });
-      // console.log('🔍 [STATUS] Token document found:', tokenDoc ? 'Yes' : 'No');
 
       if (!tokenDoc) {
-        // Let's also check if ANY tokens exist
-        const allTokens = await OutlookTokens.find({});
-        // console.log('🔍 [STATUS] Total tokens in database:', allTokens.length);
-        // if (allTokens.length > 0) {
-        //   console.log('🔍 [STATUS] Available userIds in database:', allTokens.map(t => t.userId));
-        // }
-
-        // console.log('❌ [STATUS] No tokens found for this user');
         res.status(200).json({
           success: true,
           connected: false
@@ -122,32 +144,10 @@ class OutlookController {
         return;
       }
 
-      // console.log('✅ [STATUS] Token document found');
-      // console.log('🔍 [STATUS] Token expires at:', tokenDoc.expiresAt);
-      // console.log('🔍 [STATUS] Token expired:', new Date() >= tokenDoc.expiresAt);
-
       // Try to get user profile to verify token is valid
       try {
-        let accessToken = tokenDoc.accessToken;
-        if (new Date() >= tokenDoc.expiresAt) {
-          // console.log('🔄 [STATUS] Token expired, refreshing...');
-          const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
-          accessToken = newTokens.access_token;
-
-          await OutlookTokens.findOneAndUpdate(
-            { userId },
-            {
-              accessToken: newTokens.access_token,
-              refreshToken: newTokens.refresh_token || tokenDoc.refreshToken,
-              expiresAt: new Date(Date.now() + newTokens.expires_in * 1000)
-            }
-          );
-          // console.log('✅ [STATUS] Token refreshed successfully');
-        }
-
-        // console.log('📞 [STATUS] Fetching user profile from Microsoft...');
+        const accessToken = await this.getValidAccessToken(userId);
         const profile = await outlookService.getUserProfile(accessToken);
-        // console.log('✅ [STATUS] Profile retrieved:', profile.mail || profile.userPrincipalName);
 
         res.status(200).json({
           success: true,
@@ -159,7 +159,6 @@ class OutlookController {
         console.error('❌ [STATUS] Error validating token:', error);
         // Token is invalid, delete it
         await OutlookTokens.findOneAndDelete({ userId });
-        // console.log('🗑️ [STATUS] Invalid token deleted');
         
         res.status(200).json({
           success: true,
@@ -184,7 +183,7 @@ class OutlookController {
   async sendEmail(req: Request, res: Response): Promise<void> {
     try {
       const { subject, body, toRecipients, ccRecipients, bccRecipients } = req.body;
-      const userId = (req as any).auth?.payload?.sub;
+      const userId = this.getUserId(req);
 
       if (!userId) {
         res.status(401).json({
@@ -202,34 +201,42 @@ class OutlookController {
         return;
       }
 
-      // Get tokens from database
-      const tokenDoc = await OutlookTokens.findOne({ userId });
-
-      if (!tokenDoc) {
-        res.status(404).json({
+      // Validate email addresses
+      const toValidation = this.validateEmailArray(toRecipients);
+      if (!toValidation.valid) {
+        res.status(400).json({
           success: false,
-          error: 'Outlook not connected. Please authenticate first.'
+          error: `Invalid email address(es) in 'to' field: ${toValidation.invalidEmails.join(', ')}`
         });
         return;
       }
 
-      // Check if token is expired
-      let accessToken = tokenDoc.accessToken;
-      if (new Date() >= tokenDoc.expiresAt) {
-        // Refresh token
-        const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
-        accessToken = newTokens.access_token;
-
-        // Update stored tokens
-        await OutlookTokens.findOneAndUpdate(
-          { userId },
-          {
-            accessToken: newTokens.access_token,
-            refreshToken: newTokens.refresh_token || tokenDoc.refreshToken,
-            expiresAt: new Date(Date.now() + newTokens.expires_in * 1000)
-          }
-        );
+      // Validate CC recipients if provided
+      if (ccRecipients && Array.isArray(ccRecipients) && ccRecipients.length > 0) {
+        const ccValidation = this.validateEmailArray(ccRecipients);
+        if (!ccValidation.valid) {
+          res.status(400).json({
+            success: false,
+            error: `Invalid email address(es) in 'cc' field: ${ccValidation.invalidEmails.join(', ')}`
+          });
+          return;
+        }
       }
+
+      // Validate BCC recipients if provided
+      if (bccRecipients && Array.isArray(bccRecipients) && bccRecipients.length > 0) {
+        const bccValidation = this.validateEmailArray(bccRecipients);
+        if (!bccValidation.valid) {
+          res.status(400).json({
+            success: false,
+            error: `Invalid email address(es) in 'bcc' field: ${bccValidation.invalidEmails.join(', ')}`
+          });
+          return;
+        }
+      }
+
+      // Get valid access token (will refresh if needed)
+      const accessToken = await this.getValidAccessToken(userId);
 
       // Send email
       await outlookService.sendEmail(accessToken, {
@@ -246,6 +253,15 @@ class OutlookController {
       });
     } catch (error: any) {
       console.error('Send email error:', error);
+      
+      if (error.message === 'Outlook not connected') {
+        res.status(404).json({
+          success: false,
+          error: 'Outlook not connected. Please authenticate first.'
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
         error: 'Failed to send email'
@@ -260,7 +276,7 @@ class OutlookController {
    */
   async getInbox(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).auth?.payload?.sub;
+      const userId = this.getUserId(req);
       const top = parseInt(req.query.top as string) || 10;
 
       if (!userId) {
@@ -271,33 +287,8 @@ class OutlookController {
         return;
       }
 
-      // Get tokens from database
-      const tokenDoc = await OutlookTokens.findOne({ userId });
-
-      if (!tokenDoc) {
-        res.status(404).json({
-          success: false,
-          error: 'Outlook not connected'
-        });
-        return;
-      }
-
-      // Check if token is expired
-      let accessToken = tokenDoc.accessToken;
-      if (new Date() >= tokenDoc.expiresAt) {
-        const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
-        accessToken = newTokens.access_token;
-
-        await OutlookTokens.findOneAndUpdate(
-          { userId },
-          {
-            accessToken: newTokens.access_token,
-            refreshToken: newTokens.refresh_token || tokenDoc.refreshToken,
-            expiresAt: new Date(Date.now() + newTokens.expires_in * 1000)
-          }
-        );
-      }
-
+      // Get valid access token (will refresh if needed)
+      const accessToken = await this.getValidAccessToken(userId);
       const messages = await outlookService.getInboxMessages(accessToken, top);
 
       res.status(200).json({
@@ -306,6 +297,15 @@ class OutlookController {
       });
     } catch (error: any) {
       console.error('Get inbox error:', error);
+
+      if (error.message === 'Outlook not connected') {
+        res.status(404).json({
+          success: false,
+          error: 'Outlook not connected. Please authenticate first.'
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
         error: 'Failed to get inbox messages'
@@ -321,7 +321,7 @@ class OutlookController {
   async createDraft(req: Request, res: Response): Promise<void> {
     try {
       const { subject, body, toRecipients, ccRecipients } = req.body;
-      const userId = (req as any).auth?.payload?.sub;
+      const userId = this.getUserId(req);
 
       if (!userId) {
         res.status(401).json({
@@ -339,30 +339,32 @@ class OutlookController {
         return;
       }
 
-      const tokenDoc = await OutlookTokens.findOne({ userId });
-
-      if (!tokenDoc) {
-        res.status(404).json({
-          success: false,
-          error: 'Outlook not connected'
-        });
-        return;
+      // Validate email addresses
+      if (Array.isArray(toRecipients) && toRecipients.length > 0) {
+        const toValidation = this.validateEmailArray(toRecipients);
+        if (!toValidation.valid) {
+          res.status(400).json({
+            success: false,
+            error: `Invalid email address(es) in 'to' field: ${toValidation.invalidEmails.join(', ')}`
+          });
+          return;
+        }
       }
 
-      let accessToken = tokenDoc.accessToken;
-      if (new Date() >= tokenDoc.expiresAt) {
-        const newTokens = await outlookService.refreshAccessToken(tokenDoc.refreshToken);
-        accessToken = newTokens.access_token;
-
-        await OutlookTokens.findOneAndUpdate(
-          { userId },
-          {
-            accessToken: newTokens.access_token,
-            refreshToken: newTokens.refresh_token || tokenDoc.refreshToken,
-            expiresAt: new Date(Date.now() + newTokens.expires_in * 1000)
-          }
-        );
+      // Validate CC recipients if provided
+      if (ccRecipients && Array.isArray(ccRecipients) && ccRecipients.length > 0) {
+        const ccValidation = this.validateEmailArray(ccRecipients);
+        if (!ccValidation.valid) {
+          res.status(400).json({
+            success: false,
+            error: `Invalid email address(es) in 'cc' field: ${ccValidation.invalidEmails.join(', ')}`
+          });
+          return;
+        }
       }
+
+      // Get valid access token (will refresh if needed)
+      const accessToken = await this.getValidAccessToken(userId);
 
       const draftId = await outlookService.createDraft(accessToken, {
         subject,
@@ -378,6 +380,15 @@ class OutlookController {
       });
     } catch (error: any) {
       console.error('Create draft error:', error);
+
+      if (error.message === 'Outlook not connected') {
+        res.status(404).json({
+          success: false,
+          error: 'Outlook not connected. Please authenticate first.'
+        });
+        return;
+      }
+
       res.status(500).json({
         success: false,
         error: 'Failed to create draft'
@@ -392,7 +403,7 @@ class OutlookController {
    */
   async disconnect(req: Request, res: Response): Promise<void> {
     try {
-      const userId = (req as any).auth?.payload?.sub;
+      const userId = this.getUserId(req);
 
       if (!userId) {
         res.status(401).json({
