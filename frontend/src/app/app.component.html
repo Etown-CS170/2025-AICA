@@ -1,3 +1,5 @@
+<router-outlet></router-outlet>
+
 <div class="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 p-4 transition-colors duration-300">
   <div class="max-w-6xl mx-auto">
     
@@ -425,6 +427,15 @@
                     class="flex items-center gap-2 px-3 py-2 text-sm border border-green-300 dark:border-green-600 text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20 rounded-lg transition-colors">
                     <lucide-icon [img]="Save" class="w-4 h-4"></lucide-icon>
                     Save
+                  </button>
+
+                  <!-- NEW: Send via Outlook button -->
+                  <button 
+                    *ngIf="(isAuthenticated$ | async) && (outlookService.connectionStatus$ | async)?.connected"
+                    (click)="openOutlookSendDialog(message.content)"
+                    class="flex items-center gap-2 px-3 py-2 text-sm border border-purple-300 dark:border-purple-600 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors">
+                    <lucide-icon [img]="Mail" class="w-4 h-4"></lucide-icon>
+                    Send via Outlook
                   </button>
                 </div>
               </div>
@@ -1206,6 +1217,18 @@
           </p>
         </div>
 
+        <!-- Outlook Connection Section -->
+        <div class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-800 dark:text-white flex items-center gap-2">
+              <div class="w-3 h-3 bg-purple-500 rounded-full"></div>
+              Outlook Integration
+            </h3>
+          </div>
+
+          <app-outlook-integration></app-outlook-integration>
+        </div>
+        
       </div>
 
       <!-- Modal Footer -->
@@ -1220,6 +1243,33 @@
           class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
           Done
         </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Outlook Send Dialog -->
+  <div *ngIf="showOutlookDialog" 
+       class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+       (click)="closeOutlookDialog()">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden"
+         (click)="$event.stopPropagation()">
+      
+      <!-- Dialog Header -->
+      <div class="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
+        <h2 class="text-2xl font-bold text-gray-800 dark:text-white">Send via Outlook</h2>
+        <button 
+          (click)="closeOutlookDialog()"
+          class="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors">
+          <lucide-icon [img]="X" class="w-6 h-6 text-gray-600 dark:text-gray-400"></lucide-icon>
+        </button>
+      </div>
+
+      <!-- Dialog Content -->
+      <div class="overflow-y-auto max-h-[calc(90vh-100px)] p-6">
+        <app-outlook-integration 
+          [emailContent]="selectedEmailContent"
+          (onEmailSent)="onEmailSent($event)">
+        </app-outlook-integration>
       </div>
     </div>
   </div>

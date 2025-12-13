@@ -18,14 +18,23 @@ import {
 import { AuthService } from '@auth0/auth0-angular';
 import { environment } from '../environments/environment';
 import { distinctUntilChanged } from 'rxjs/operators';
+import { RouterOutlet } from '@angular/router';
+import { OutlookIntegrationComponent } from './components/outlook-integration.component';
+import { OutlookService } from './services/outlook.service';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [CommonModule, FormsModule, LucideAngularModule],
+  imports: [
+    CommonModule, 
+    FormsModule, 
+    LucideAngularModule,
+    RouterOutlet,
+    OutlookIntegrationComponent
+  ],
   templateUrl: './app.component.html',
   styleUrls: ['./app.component.css'],
-  providers: [EmailService, PreferencesService]
+  providers: [EmailService, PreferencesService, OutlookService]  // Add OutlookService
 })
 export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
@@ -76,9 +85,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   editingSignatureId: string | null = null;
   editingSignatureName: string = '';
   editingSignatureContent: string = '';
-  isCustomSignature: boolean = false; // NEW: Add this line
-  customSignatureName: string = ''; // NEW: Add this line
-  customSignatureContent: string = ''; // NEW: Add this line
+  isCustomSignature: boolean = false;
+  customSignatureName: string = '';
+  customSignatureContent: string = '';
 
   // Component state
   messages: Message[] = [];
@@ -106,6 +115,10 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   editingEmailContent: string = '';
   editingEmailTone: string = '';
   editingEmailAudience: string = '';
+  
+  // Outlook dialog state
+  showOutlookDialog: boolean = false;
+  selectedEmailContent: string = '';
 
   // Manual email add state
   showManualEmailAdd: boolean = false;
@@ -150,7 +163,8 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     private emailService: EmailService,
     public preferencesService: PreferencesService,
     private themeService: ThemeService,
-    public auth: AuthService
+    public auth: AuthService,
+    public outlookService: OutlookService
   ) {}
 
   ngOnDestroy(): void {
@@ -209,6 +223,9 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
             if (!success) {
               console.log('⚠️ Failed to load preferences, using defaults');
             }
+
+            // Check Outlook connection status
+            await this.outlookService.checkConnectionStatus(token);
           },
           error: (err) => {
             console.error('❌ Token error:', err);
@@ -239,13 +256,37 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     this.themeService.toggleTheme();
   }
 
-  toggleSettingsModal(): void {
+  async toggleSettingsModal(): Promise<void> {
     this.showSettingsModal = !this.showSettingsModal;
+    
+    if (this.showSettingsModal && this.accessToken) {
+      // console.log('🔍 Checking Outlook status from settings modal...');
+      await this.outlookService.checkConnectionStatus(this.accessToken);
+      // console.log('📊 Status after check:', this.outlookService.getCurrentStatus());
+    }
   }
 
   closeSettingsModal(event: MouseEvent): void {
     if (event.target === event.currentTarget) {
       this.showSettingsModal = false;
+    }
+  }
+
+  openOutlookSendDialog(content: string): void {
+    this.selectedEmailContent = content;
+    this.showOutlookDialog = true;
+  }
+
+  closeOutlookDialog(): void {
+    this.showOutlookDialog = false;
+    this.selectedEmailContent = '';
+  }
+
+  onEmailSent(success: boolean): void {
+    if (success) {
+      this.showOutlookDialog = false;
+      this.showSaveSuccess = true;
+      setTimeout(() => this.showSaveSuccess = false, 2000);
     }
   }
 
@@ -332,7 +373,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // NEW: Add this method
   toggleCustomSignature(): void {
     this.isCustomSignature = !this.isCustomSignature;
     if (this.isCustomSignature) {
@@ -421,7 +461,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
   }
 
   getCurrentSignature(): string {
-    // NEW: Update this method to handle custom signatures
     if (this.isCustomSignature && this.customSignatureName.trim()) {
       return this.customSignatureName.trim().toLowerCase();
     }
@@ -475,7 +514,7 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
       if (response.success && response.email) {
         let emailContent = response.email;
         
-        // NEW: Apply custom or saved signature
+        // Apply custom or saved signature
         if (this.isCustomSignature && this.customSignatureContent.trim()) {
           emailContent = this.applyCustomSignatureToEmail(emailContent, this.customSignatureContent);
         } else if (this.selectedSignatureId) {
@@ -625,7 +664,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     }
   }
 
-  // NEW: Add this method to save custom signature
   async saveCustomSignature(): Promise<void> {
     if (!this.accessToken || !this.customSignatureName.trim() || !this.customSignatureContent.trim()) return;
 
@@ -1127,7 +1165,6 @@ export class AppComponent implements OnInit, AfterViewChecked, OnDestroy {
     return cleanedContent + '\n\n' + signature.content;
   }
 
-  // NEW: Add this method for custom signatures
   applyCustomSignatureToEmail(emailContent: string, customSignature: string): string {
     let cleanedContent = emailContent;
     

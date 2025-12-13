@@ -6,6 +6,7 @@ import cors from 'cors';
 import { connectDatabase } from './config/database.config';
 import emailRoutes from './routes/email.routes';
 import preferencesRoutes from './routes/preferences.routes';
+import outlookRoutes from './routes/outlook.routes';
 
 const app: Application = express();
 const PORT = process.env.PORT || 3000;
@@ -29,7 +30,8 @@ app.use((req: Request, res: Response, next: NextFunction) => {
 
 // Routes
 app.use('/api/email', emailRoutes);
-app.use('/api/preferences', preferencesRoutes); // NEW
+app.use('/api/preferences', preferencesRoutes);
+app.use('/api/outlook', outlookRoutes);
 
 // Health check (public)
 app.get('/api/health', (req: Request, res: Response) => {
